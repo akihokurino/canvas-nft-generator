@@ -1,0 +1,147 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  canvas-nft-generator
+Globals:
+  Function:
+    Timeout: 5
+
+Parameters:
+  SsmParameter:
+    Type: String
+    Default: /canvas-nft-generator/server/dotenv
+    Description: ssm parameter path
+  DomainName:
+    Type: String
+    Default: canvas-nft-generator.akiho.app
+    Description: api service domain name
+  HostedZoneName:
+    Type: String
+    Default: akiho.app.
+    Description: hosted zone name for service domain
+  CertificateArn:
+    Type: String
+    Default: arn:aws:acm:ap-northeast-1:326914400610:certificate/cc857fc9-2676-4fdd-90fc-8e989b5e2506
+    Description: certificate arn for service domain
+
+Resources:
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: bootstrap.is.real.handler
+      Runtime: provided.al2
+      MemorySize: 128
+      Tracing: Active
+      Timeout: 900
+      Events:
+        ProxyApiRoot:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /
+            Method: ANY
+        ProxyApiGreedy:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ApiGateway
+            Path: /{proxy+}
+            Method: ANY
+      Environment:
+        Variables:
+          WITH_LAMBDA: true
+          SSM_DOTENV_PARAMETER_NAME: !Ref SsmParameter
+      Policies:
+        - AmazonDynamoDBFullAccess
+        - AmazonCognitoPowerUser
+        - AmazonSSMReadOnlyAccess
+        - AmazonSNSFullAccess
+        - AmazonSESFullAccess
+        - AmazonS3FullAccess
+        - AWSLambda_FullAccess
+    Metadata:
+      BuildMethod: makefile
+
+#  SubscriberFunction:
+#    Type: AWS::Serverless::Function
+#    Properties:
+#      CodeUri: ./target_lambda/subscriber.zip
+#      Handler: bootstrap.is.real.handler
+#      Runtime: provided.al2
+#      MemorySize: 128
+#      Tracing: Active
+#      Timeout: 900
+#      Events:
+#        Topic:
+#          Type: SNS
+#          Properties:
+#            Topic: arn:aws:sns:ap-northeast-1:326914400610:canvas-nft-generator-topic
+#      EventInvokeConfig:
+#        MaximumRetryAttempts: 0
+#      Environment:
+#        Variables:
+#          SSM_PARAMETER: !Ref SsmParameter
+#      Policies:
+#        - AmazonDynamoDBFullAccess
+#        - AmazonCognitoPowerUser
+#        - AmazonSSMReadOnlyAccess
+#        - AmazonSNSFullAccess
+#        - AmazonSESFullAccess
+#        - AmazonS3FullAccess
+#        - AWSLambda_FullAccess
+
+#  BatchFunction:
+#    Type: AWS::Serverless::Function
+#    Properties:
+#      CodeUri: ./target_lambda/batch.zip
+#      Handler: bootstrap.is.real.handler
+#      Runtime: provided.al2
+#      MemorySize: 128
+#      Tracing: Active
+#      Timeout: 900
+#      Events:
+#        SyncWork:
+#          Type: Schedule
+#          Properties:
+#            Description: ''
+#            Enabled: false
+#            Input: '{"command":"sync-work"}'
+#            Schedule: 'cron(0 12 * * ? *)'
+#        SyncAllTokens:
+#          Type: Schedule
+#          Properties:
+#            Description: ''
+#            Enabled: true
+#            Input: '{"command":"sync-all-tokens"}'
+#            Schedule: 'cron(0 0 * * ? *)'
+#        AutoSelling:
+#          Type: Schedule
+#          Properties:
+#            Description: ''
+#            Enabled: true
+#            Input: '{"command":"auto-selling"}'
+#            Schedule: 'cron(0 1 * * ? *)'
+#      Environment:
+#        Variables:
+#          SSM_PARAMETER: !Ref SsmParameter
+#      Policies:
+#        - AmazonDynamoDBFullAccess
+#        - AmazonCognitoPowerUser
+#        - AmazonSSMReadOnlyAccess
+#        - AmazonSNSFullAccess
+#        - AmazonSESFullAccess
+#        - AmazonS3FullAccess
+#        - AWSLambda_FullAccess
+
+  ApiGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: default
+      BinaryMediaTypes:
+        - "*/*"
+      Domain:
+        EndpointConfiguration: REGIONAL
+        DomainName: !Ref DomainName
+        Route53:
+          HostedZoneName: !Ref HostedZoneName
+        CertificateArn: !Ref CertificateArn

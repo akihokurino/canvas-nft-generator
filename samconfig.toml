@@ -1,0 +1,11 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "canvas-nft-generator"
+s3_bucket = "canvas-nft-generator-artifact"
+s3_prefix = "canvas-nft-generator"
+region = "ap-northeast-1"
+confirm_changeset = false
+fail_on_empty_changeset = false
+capabilities = "CAPABILITY_IAM"
