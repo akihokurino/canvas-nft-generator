@@ -18,6 +18,13 @@ pub struct AppError {
 }
 
 impl AppError {
+    pub fn new(kind: Kind, msg: &str) -> Self {
+        Self {
+            kind,
+            msg: Some(msg.to_string()),
+        }
+    }
+
     pub fn default() -> Self {
         Self {
             kind: Kind::Internal,
