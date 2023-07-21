@@ -3,7 +3,7 @@ use crate::errors::{AppError, Kind};
 use crate::AppResult;
 use aws_sdk_dynamodb::types::{AttributeValue, ComparisonOperator, Condition};
 use chrono::{DateTime, Local, TimeZone};
-use serde::{Deserialize, Serialize};
+use derive_more::{AsRef, Display, From, Into};
 use std::collections::HashMap;
 
 pub mod contract;
@@ -146,65 +146,46 @@ pub fn condition_contains(v: impl Into<String>) -> Condition {
         .build()
 }
 
-#[derive(Default)]
-pub struct PagingKey {
-    pub val: Option<HashMap<String, AttributeValue>>,
+#[allow(unused)]
+pub fn condition_start_from(v: impl Into<String>, forward: bool) -> Condition {
+    Condition::builder()
+        .attribute_value_list(AttributeValue::S(v.into()))
+        .comparison_operator(if forward {
+            ComparisonOperator::Gt
+        } else {
+            ComparisonOperator::Lt
+        })
+        .build()
 }
 
-impl PagingKey {
-    pub fn from(val: Option<HashMap<String, AttributeValue>>) -> Self {
-        Self { val }
-    }
+#[derive(Debug, Clone, Into, From, Display, AsRef, Ord, PartialOrd, Eq, PartialEq)]
+pub struct Cursor(pub String);
 
-    pub fn decode(from: Option<String>) -> AppResult<Self> {
-        if from.is_none() {
-            return Ok(Self { val: None });
-        }
-
-        let bytes = base64::decode::<String>(from.unwrap())?;
-        let json = bytes.iter().map(|&s| s as char).collect::<String>();
-        let tmp = serde_json::from_str::<HashMap<String, EncodableAttributeValue>>(json.as_str())?;
-        let mut val: HashMap<String, AttributeValue> = HashMap::new();
-        for (k, v) in tmp {
-            match v {
-                EncodableAttributeValue::S(rv) => {
-                    val.insert(k.to_owned(), AttributeValue::S(rv));
-                }
-                EncodableAttributeValue::N(rv) => {
-                    val.insert(k.to_owned(), AttributeValue::N(rv));
-                }
-            }
-        }
-        Ok(Self { val: Some(val) })
-    }
-
-    pub fn encode(&self) -> Option<String> {
-        if self.val.is_none() {
-            return None;
-        }
-
-        let mut tmp: HashMap<String, EncodableAttributeValue> = HashMap::new();
-        for (k, v) in self.val.to_owned().unwrap() {
-            if v.is_s() {
-                tmp.insert(
-                    k.to_owned(),
-                    EncodableAttributeValue::S(v.as_s().unwrap().to_owned()),
-                );
-            }
-            if v.is_n() {
-                tmp.insert(
-                    k.to_owned(),
-                    EncodableAttributeValue::N(v.as_n().unwrap().to_owned()),
-                );
-            }
-        }
-        let json = serde_json::to_string(&tmp).unwrap();
-        Some(base64::encode::<String>(json))
-    }
+#[derive(Debug, Clone)]
+pub struct EntityWithCursor<E> {
+    pub entity: E,
+    pub cursor: Cursor,
 }
 
-#[derive(Serialize, Deserialize)]
-pub enum EncodableAttributeValue {
-    S(String),
-    N(String),
+impl<T> EntityWithCursor<T> {
+    pub fn new(
+        from: HashMap<String, AttributeValue>,
+        f: fn(HashMap<String, AttributeValue>) -> AppResult<T>,
+    ) -> AppResult<EntityWithCursor<T>> {
+        Ok(EntityWithCursor {
+            entity: f(from.clone())?,
+            cursor: from
+                .get("sk")
+                .ok_or_else(|| "range key field missing".to_string())
+                .and_then(|v| {
+                    Ok(Cursor(
+                        v.clone()
+                            .as_s()
+                            .map_err(|_| "not a string".to_string())?
+                            .clone(),
+                    ))
+                })
+                .map_err(|err| format!("{}", err))?,
+        })
+    }
 }

@@ -1,5 +1,6 @@
 use crate::ddb::{
-    condition_eq, AttributeStringValue, AttributeValueResolver, MustPresent, PagingKey, PrimaryKey,
+    condition_eq, condition_start_from, AttributeStringValue, AttributeValueResolver, Cursor,
+    EntityWithCursor, MustPresent, PrimaryKey,
 };
 use crate::domain::contract::{Contract, ContractId, Network, Schema, WalletAddress};
 use crate::domain::time::LocalDateTime;
@@ -108,6 +109,7 @@ impl Into<HashMap<String, AttributeValue>> for Contract {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct Repository {
     pub cli: aws_sdk_dynamodb::Client,
 }
@@ -119,10 +121,11 @@ impl Repository {
 
     pub async fn get_with_pager(
         &self,
-        key: &PagingKey,
-        limit: &Option<i32>,
-    ) -> AppResult<(Vec<Contract>, PagingKey)> {
-        let res = self
+        cursor: Option<Cursor>,
+        limit: i32,
+        forward: bool,
+    ) -> AppResult<Vec<EntityWithCursor<Contract>>> {
+        let mut q = self
             .cli
             .query()
             .index_name("glk-createdAt-index")
@@ -130,21 +133,20 @@ impl Repository {
                 "glk".to_string(),
                 condition_eq(ContractId::typename().to_attribute_value()),
             )])))
-            .set_exclusive_start_key(key.val.to_owned())
-            .limit(limit.unwrap_or(20))
-            .scan_index_forward(false)
-            .table_name(TABLE_NAME)
-            .send()
-            .await?;
+            .limit(limit)
+            .scan_index_forward(forward)
+            .table_name(TABLE_NAME);
+        if let Some(cursor) = cursor {
+            q = q.key_conditions("createdAt", condition_start_from(cursor, forward))
+        }
 
-        Ok((
-            res.items
-                .unwrap_or_default()
-                .into_iter()
-                .map(|v| Contract::try_from(v))
-                .collect::<AppResult<Vec<_>>>()?,
-            PagingKey::from(res.last_evaluated_key),
-        ))
+        let res = q.send().await?;
+
+        res.items
+            .unwrap_or_default()
+            .into_iter()
+            .map(|v| EntityWithCursor::new(v, |v| Contract::try_from(v)))
+            .collect::<AppResult<Vec<EntityWithCursor<Contract>>>>()
     }
 
     pub async fn get_latest(&self, schema: &Schema) -> AppResult<Contract> {

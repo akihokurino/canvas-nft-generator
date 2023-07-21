@@ -1,6 +1,5 @@
 pub mod contract;
 pub mod token;
-pub mod wallet;
 
 use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
@@ -62,4 +61,8 @@ pub mod time {
     use chrono::{DateTime, Local};
 
     pub type LocalDateTime = DateTime<Local>;
+
+    pub fn now() -> LocalDateTime {
+        Local::now()
+    }
 }

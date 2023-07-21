@@ -46,6 +46,13 @@ impl AppError {
         }
     }
 
+    pub fn bad_request() -> Self {
+        Self {
+            kind: Kind::BadRequest,
+            msg: None,
+        }
+    }
+
     pub fn un_authorized() -> Self {
         Self {
             kind: Kind::Unauthorized,
@@ -148,6 +155,15 @@ impl From<base64::DecodeError> for AppError {
         Self {
             kind: Kind::Internal,
             msg: Some(err.to_string()),
+        }
+    }
+}
+
+impl From<String> for AppError {
+    fn from(err: String) -> Self {
+        Self {
+            kind: Kind::Internal,
+            msg: Some(err),
         }
     }
 }

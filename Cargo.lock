@@ -342,7 +342,10 @@ dependencies = [
  "app",
  "async-graphql",
  "async-graphql-actix-web",
+ "async-graphql-value",
  "async-trait",
+ "chrono",
+ "derive_more",
  "http",
  "lambda-web",
 ]

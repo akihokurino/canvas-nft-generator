@@ -11,3 +11,6 @@ build-ApiFunction: target/x86_64-unknown-linux-musl/release/api
 
 run-local-api:
 	SSM_DOTENV_PARAMETER_NAME=/canvas-nft-generator/server/dotenv cargo run --bin api
+
+extract-abi:
+	cat ethereum/artifacts/contracts/Canvas.sol/Canvas.json | jq '.abi' | jq -c | jq '@json' | cat

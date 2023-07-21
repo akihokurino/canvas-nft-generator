@@ -1,11 +1,13 @@
 mod errors;
 mod mutation;
+mod pagination;
 mod query;
 mod types;
 
 use crate::graph::mutation::MutationRoot;
 use crate::graph::query::QueryRoot;
 use actix_web::HttpRequest;
+use app::di;
 use app::errors::AppError;
 use async_graphql::{Context, EmptySubscription};
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
@@ -34,7 +36,9 @@ pub struct HttpHandler {
 
 impl HttpHandler {
     pub async fn new() -> Self {
-        let my_wallet = app::di::MY_WALLET.get().await.clone();
+        let my_wallet = di::MY_WALLET.get().await.clone();
+        let contract_repository = di::CONTRACT_REPOSITORY.get().await.clone();
+        let token_repository = di::TOKEN_REPOSITORY.get().await.clone();
 
         let schema = Schema::build(
             QueryRoot::default(),
@@ -42,6 +46,8 @@ impl HttpHandler {
             EmptySubscription,
         )
         .data(my_wallet.clone())
+        .data(contract_repository.clone())
+        .data(token_repository.clone())
         .finish();
 
         HttpHandler { schema }

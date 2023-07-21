@@ -23,6 +23,10 @@ impl MyWallet {
         }
     }
 
+    pub fn raw_address(&self) -> String {
+        format!("{:?}", self.address)
+    }
+
     pub async fn get_balance(&self) -> AppResult<f64> {
         let client = SignerMiddleware::new_with_provider_chain(
             self.provider.to_owned(),
