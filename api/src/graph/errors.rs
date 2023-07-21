@@ -26,6 +26,12 @@ impl From<app::errors::AppError> for Error {
     }
 }
 
+impl From<async_graphql::Error> for Error {
+    fn from(v: async_graphql::Error) -> Self {
+        Self::new("Internal", v.message)
+    }
+}
+
 impl From<Error> for FieldError {
     fn from(v: Error) -> Self {
         Self::new(v.message).extend_with(|_, err| err.set("code", v.code.to_string()))

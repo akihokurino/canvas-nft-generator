@@ -1,6 +1,6 @@
 use crate::domain;
 use crate::domain::time::LocalDateTime;
-use crate::domain::wallet::WalletAddress;
+use derive_more::{From, Into};
 
 #[derive(PartialEq, Clone, Debug, Copy, strum_macros::EnumString, strum_macros::Display)]
 pub enum Schema {
@@ -14,6 +14,9 @@ pub enum Network {
 }
 
 pub type ContractId = domain::Id<Contract>;
+
+#[derive(From, Into, Clone, Debug)]
+pub struct WalletAddress(pub String);
 
 #[derive(Clone, Debug)]
 pub struct Contract {

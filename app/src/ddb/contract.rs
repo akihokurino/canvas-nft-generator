@@ -1,9 +1,8 @@
 use crate::ddb::{
     condition_eq, AttributeStringValue, AttributeValueResolver, MustPresent, PagingKey, PrimaryKey,
 };
-use crate::domain::contract::{Contract, ContractId, Network, Schema};
+use crate::domain::contract::{Contract, ContractId, Network, Schema, WalletAddress};
 use crate::domain::time::LocalDateTime;
-use crate::domain::wallet::WalletAddress;
 use crate::errors::AppError;
 use crate::AppResult;
 use aws_sdk_dynamodb::types::{AttributeValue, KeysAndAttributes};

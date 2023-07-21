@@ -363,6 +363,7 @@ dependencies = [
  "dotenv-parser",
  "ethers",
  "ethers-signers",
+ "once_cell",
  "serde",
  "serde_json",
  "strum",

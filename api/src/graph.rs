@@ -34,11 +34,14 @@ pub struct HttpHandler {
 
 impl HttpHandler {
     pub async fn new() -> Self {
+        let my_wallet = app::di::MY_WALLET.get().await.clone();
+
         let schema = Schema::build(
             QueryRoot::default(),
             MutationRoot::default(),
             EmptySubscription,
         )
+        .data(my_wallet.clone())
         .finish();
 
         HttpHandler { schema }

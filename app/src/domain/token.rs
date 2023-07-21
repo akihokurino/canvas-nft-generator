@@ -1,7 +1,6 @@
 use crate::domain;
-use crate::domain::contract::ContractId;
+use crate::domain::contract::{ContractId, WalletAddress};
 use crate::domain::time::LocalDateTime;
-use crate::domain::wallet::{Wallet, WalletAddress};
 
 pub type TokenId = domain::Id<Token>;
 
@@ -26,14 +25,14 @@ impl Token {
         ipfs_hash: String,
         name: String,
         description: String,
-        wallet: Wallet,
+        wallet_address: WalletAddress,
         now: LocalDateTime,
     ) -> Self {
         Self {
             address,
             token_id,
             work_id,
-            owner_address: wallet.address,
+            owner_address: wallet_address,
             ipfs_hash,
             name,
             description,

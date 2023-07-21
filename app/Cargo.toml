@@ -24,3 +24,4 @@ strum_macros = "0.25.1"
 ethers = { version = "2.0.8", features = ["legacy"] }
 ethers-signers = "2.0.8"
 base64 = "0.21.2"
+once_cell = "1.18.0"
