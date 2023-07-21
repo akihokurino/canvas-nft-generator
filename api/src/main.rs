@@ -2,6 +2,7 @@ mod graph;
 
 use actix_web::web::Data;
 use actix_web::{guard, web, App, HttpRequest, HttpResponse, HttpServer};
+use app::{di, ethereum};
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
 use std::env;
@@ -22,12 +23,16 @@ async fn main() -> std::io::Result<()> {
         .unwrap_or(true);
 
     let handler = graph::HttpHandler::new().await;
+    let my_wallet = di::MY_WALLET.get().await.clone();
 
     let app_factory = move || {
-        let mut app = App::new().app_data(Data::new(handler.clone())).service(
-            web::scope("/graphql")
-                .service(web::resource("").guard(guard::Post()).to(graphql_route)),
-        );
+        let mut app = App::new()
+            .app_data(Data::new(handler.clone()))
+            .app_data(Data::new(my_wallet.clone()))
+            .service(
+                web::scope("/graphql")
+                    .service(web::resource("").guard(guard::Post()).to(graphql_route)),
+            );
 
         if with_playground {
             app = app.service(
@@ -54,10 +59,13 @@ async fn main() -> std::io::Result<()> {
 
 async fn graphql_route(
     handler: Data<graph::HttpHandler>,
+    my_wallet: Data<ethereum::MyWallet>,
     http_req: HttpRequest,
     gql_req: GraphQLRequest,
 ) -> GraphQLResponse {
-    handler.handle(http_req, gql_req).await
+    handler
+        .handle(http_req, gql_req, my_wallet.as_ref().clone())
+        .await
 }
 
 async fn playground_route() -> actix_web::Result<HttpResponse> {

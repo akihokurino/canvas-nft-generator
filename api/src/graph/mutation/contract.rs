@@ -1,4 +1,5 @@
 use crate::graph;
+use crate::graph::AppContext;
 use app::ddb;
 use app::{domain, ethereum};
 use async_graphql::Object;
@@ -14,6 +15,8 @@ impl ContractMutation {
         ctx: &Context<'_>,
         input: ContractCreateInput,
     ) -> graph::Result<graph::types::contract::Contract> {
+        ctx.authorized()?;
+
         let my_wallet = ctx.data::<ethereum::MyWallet>()?;
         let contract_repository = ctx.data::<ddb::contract::Repository>()?;
         let now = domain::time::now();
