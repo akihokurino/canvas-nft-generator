@@ -136,6 +136,7 @@ impl Repository {
             .limit(limit)
             .scan_index_forward(forward)
             .table_name(TABLE_NAME);
+
         if let Some(cursor) = cursor {
             q = q.key_conditions("createdAt", condition_start_from(cursor, forward))
         }

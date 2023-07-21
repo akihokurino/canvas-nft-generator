@@ -1,6 +1,6 @@
 use crate::ddb::{
-    condition_eq, condition_sk_type, AttributeStringValue, AttributeValueResolver, MustPresent,
-    PrimaryKey,
+    condition_eq, condition_sk_type, condition_start_from, AttributeStringValue,
+    AttributeValueResolver, Cursor, EntityWithCursor, MustPresent, PrimaryKey,
 };
 use crate::domain::contract::{ContractId, WalletAddress};
 use crate::domain::time::LocalDateTime;
@@ -124,106 +124,109 @@ impl Repository {
         Self { cli }
     }
 
-    // pub async fn get_by_contract_with_pager(
-    //     &self,
-    //     address: &ContractId,
-    //     key: &PagingKey,
-    //     limit: &Option<i32>,
-    // ) -> AppResult<(Vec<Token>, PagingKey)> {
-    //     let res = self
-    //         .cli
-    //         .query()
-    //         .set_key_conditions(Some(HashMap::from([
-    //             ("pk".to_string(), condition_eq(address.to_attribute_value())),
-    //             ("sk".to_string(), condition_sk_type::<TokenId>()),
-    //         ])))
-    //         .set_exclusive_start_key(key.val.to_owned())
-    //         .limit(limit.unwrap_or(20))
-    //         .table_name(TABLE_NAME)
-    //         .send()
-    //         .await?;
-    //
-    //     Ok((
-    //         res.items
-    //             .unwrap_or_default()
-    //             .into_iter()
-    //             .map(|v| Token::try_from(v))
-    //             .collect::<AppResult<Vec<_>>>()?,
-    //         PagingKey::from(res.last_evaluated_key),
-    //     ))
-    // }
-    //
-    // pub async fn get_stock_by_contract_with_pager(
-    //     &self,
-    //     wallet_address: WalletAddress,
-    //     address: &ContractId,
-    //     key: &PagingKey,
-    //     limit: &Option<i32>,
-    // ) -> AppResult<(Vec<Token>, PagingKey)> {
-    //     let res = self
-    //         .cli
-    //         .query()
-    //         .set_key_conditions(Some(HashMap::from([
-    //             ("pk".to_string(), condition_eq(address.to_attribute_value())),
-    //             ("sk".to_string(), condition_sk_type::<TokenId>()),
-    //         ])))
-    //         .set_filter_expression(Some("attribute_not_exists(priceEth)".to_string()))
-    //         .filter_expression("ownerAddress = :ownerAddress")
-    //         .expression_attribute_values(
-    //             ":ownerAddress",
-    //             <WalletAddress as Into<String>>::into(wallet_address).to_attribute_value(),
-    //         )
-    //         .set_exclusive_start_key(key.val.to_owned())
-    //         .limit(limit.unwrap_or(20))
-    //         .table_name(TABLE_NAME)
-    //         .send()
-    //         .await?;
-    //
-    //     Ok((
-    //         res.items
-    //             .unwrap_or_default()
-    //             .into_iter()
-    //             .map(|v| Token::try_from(v))
-    //             .collect::<AppResult<Vec<_>>>()?,
-    //         PagingKey::from(res.last_evaluated_key),
-    //     ))
-    // }
-    //
-    // pub async fn get_sell_order_by_contract_with_pager(
-    //     &self,
-    //     wallet_address: WalletAddress,
-    //     address: &ContractId,
-    //     key: &PagingKey,
-    //     limit: &Option<i32>,
-    // ) -> AppResult<(Vec<Token>, PagingKey)> {
-    //     let res = self
-    //         .cli
-    //         .query()
-    //         .set_key_conditions(Some(HashMap::from([
-    //             ("pk".to_string(), condition_eq(address.to_attribute_value())),
-    //             ("sk".to_string(), condition_sk_type::<TokenId>()),
-    //         ])))
-    //         .set_filter_expression(Some("attribute_exists(priceEth)".to_string()))
-    //         .filter_expression("ownerAddress = :ownerAddress")
-    //         .expression_attribute_values(
-    //             ":ownerAddress",
-    //             <WalletAddress as Into<String>>::into(wallet_address).to_attribute_value(),
-    //         )
-    //         .set_exclusive_start_key(key.val.to_owned())
-    //         .limit(limit.unwrap_or(20))
-    //         .table_name(TABLE_NAME)
-    //         .send()
-    //         .await?;
-    //
-    //     Ok((
-    //         res.items
-    //             .unwrap_or_default()
-    //             .into_iter()
-    //             .map(|v| Token::try_from(v))
-    //             .collect::<AppResult<Vec<_>>>()?,
-    //         PagingKey::from(res.last_evaluated_key),
-    //     ))
-    // }
+    pub async fn get_by_contract_with_pager(
+        &self,
+        address: &ContractId,
+        cursor: Option<Cursor>,
+        limit: i32,
+        forward: bool,
+    ) -> AppResult<Vec<EntityWithCursor<Token>>> {
+        let mut q = self
+            .cli
+            .query()
+            .set_key_conditions(Some(HashMap::from([
+                ("pk".to_string(), condition_eq(address.to_attribute_value())),
+                ("sk".to_string(), condition_sk_type::<TokenId>()),
+            ])))
+            .limit(limit)
+            .table_name(TABLE_NAME);
+
+        if let Some(cursor) = cursor {
+            q = q.key_conditions("sk", condition_start_from(cursor, forward))
+        }
+
+        let res = q.send().await?;
+
+        res.items
+            .unwrap_or_default()
+            .into_iter()
+            .map(|v| EntityWithCursor::new(v, |v| Token::try_from(v)))
+            .collect::<AppResult<Vec<EntityWithCursor<Token>>>>()
+    }
+
+    pub async fn get_stock_by_contract_with_pager(
+        &self,
+        wallet_address: WalletAddress,
+        address: &ContractId,
+        cursor: Option<Cursor>,
+        limit: i32,
+        forward: bool,
+    ) -> AppResult<Vec<EntityWithCursor<Token>>> {
+        let mut q = self
+            .cli
+            .query()
+            .set_key_conditions(Some(HashMap::from([
+                ("pk".to_string(), condition_eq(address.to_attribute_value())),
+                ("sk".to_string(), condition_sk_type::<TokenId>()),
+            ])))
+            .set_filter_expression(Some("attribute_not_exists(priceEth)".to_string()))
+            .filter_expression("ownerAddress = :ownerAddress")
+            .expression_attribute_values(
+                ":ownerAddress",
+                <WalletAddress as Into<String>>::into(wallet_address).to_attribute_value(),
+            )
+            .limit(limit)
+            .table_name(TABLE_NAME);
+
+        if let Some(cursor) = cursor {
+            q = q.key_conditions("sk", condition_start_from(cursor, forward))
+        }
+
+        let res = q.send().await?;
+
+        res.items
+            .unwrap_or_default()
+            .into_iter()
+            .map(|v| EntityWithCursor::new(v, |v| Token::try_from(v)))
+            .collect::<AppResult<Vec<EntityWithCursor<Token>>>>()
+    }
+
+    pub async fn get_sell_order_by_contract_with_pager(
+        &self,
+        wallet_address: WalletAddress,
+        address: &ContractId,
+        cursor: Option<Cursor>,
+        limit: i32,
+        forward: bool,
+    ) -> AppResult<Vec<EntityWithCursor<Token>>> {
+        let mut q = self
+            .cli
+            .query()
+            .set_key_conditions(Some(HashMap::from([
+                ("pk".to_string(), condition_eq(address.to_attribute_value())),
+                ("sk".to_string(), condition_sk_type::<TokenId>()),
+            ])))
+            .set_filter_expression(Some("attribute_exists(priceEth)".to_string()))
+            .filter_expression("ownerAddress = :ownerAddress")
+            .expression_attribute_values(
+                ":ownerAddress",
+                <WalletAddress as Into<String>>::into(wallet_address).to_attribute_value(),
+            )
+            .limit(limit)
+            .table_name(TABLE_NAME);
+
+        if let Some(cursor) = cursor {
+            q = q.key_conditions("sk", condition_start_from(cursor, forward))
+        }
+
+        let res = q.send().await?;
+
+        res.items
+            .unwrap_or_default()
+            .into_iter()
+            .map(|v| EntityWithCursor::new(v, |v| Token::try_from(v)))
+            .collect::<AppResult<Vec<EntityWithCursor<Token>>>>()
+    }
 
     pub async fn get(&self, address: &ContractId, token_id: &TokenId) -> AppResult<Token> {
         let res = self
