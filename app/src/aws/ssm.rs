@@ -20,7 +20,7 @@ pub async fn may_load_dotenv() -> AppResult<()> {
         .value
         .unwrap();
 
-    for (k, v) in dotenv_parser::parse_dotenv(&body).map_err(|_v| AppError::default())? {
+    for (k, v) in dotenv_parser::parse_dotenv(&body).map_err(|_v| AppError::internal())? {
         std::env::set_var(k, v);
     }
 

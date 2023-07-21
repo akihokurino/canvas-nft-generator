@@ -1,5 +1,6 @@
 use crate::domain;
 use crate::domain::contract::ContractId;
+use crate::domain::time::LocalDateTime;
 use crate::domain::wallet::{Wallet, WalletAddress};
 
 pub type TokenId = domain::Id<Token>;
@@ -11,7 +12,10 @@ pub struct Token {
     pub work_id: String,
     pub owner_address: WalletAddress,
     pub ipfs_hash: String,
+    pub name: String,
+    pub description: String,
     pub price_eth: Option<f64>,
+    pub created_at: LocalDateTime,
 }
 
 impl Token {
@@ -20,7 +24,10 @@ impl Token {
         token_id: TokenId,
         work_id: String,
         ipfs_hash: String,
+        name: String,
+        description: String,
         wallet: Wallet,
+        now: LocalDateTime,
     ) -> Self {
         Self {
             address,
@@ -28,7 +35,10 @@ impl Token {
             work_id,
             owner_address: wallet.address,
             ipfs_hash,
+            name,
+            description,
             price_eth: None,
+            created_at: now,
         }
     }
 

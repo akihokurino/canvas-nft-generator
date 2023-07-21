@@ -52,7 +52,7 @@ impl HttpHandler {
         gql_req = gql_req.data(if let Some(hv) = headers.get("authorization") {
             Ok("")
         } else {
-            Err(AppError::auth_error())
+            Err(AppError::un_authorized())
         });
 
         self.schema.execute(gql_req).await.into()
