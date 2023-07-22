@@ -54,6 +54,19 @@ impl Canvas {
         ))
     }
 
+    pub async fn owner_of(
+        &self,
+        contract: &domain::contract::Contract,
+        token_id: U256,
+    ) -> AppResult<Address> {
+        let res = self
+            .query_contract(contract)?
+            .method::<_, Address>("ownerOf", token_id)?
+            .call()
+            .await?;
+        Ok(res)
+    }
+
     pub async fn token_id_of(
         &self,
         contract: &domain::contract::Contract,
