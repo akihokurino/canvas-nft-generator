@@ -5,6 +5,7 @@ use async_graphql_value::ConstValue;
 use derive_more::{From, Into};
 
 pub mod contract;
+pub mod token;
 pub mod wallet;
 
 #[derive(Clone, Debug, From, Into)]

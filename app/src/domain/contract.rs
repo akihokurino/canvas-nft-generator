@@ -25,7 +25,6 @@ pub struct Contract {
     pub schema: Schema,
     pub network: Network,
     pub abi: String,
-    pub auto_sell_ether: Option<f64>,
     pub created_at: LocalDateTime,
 }
 
@@ -42,15 +41,7 @@ impl Contract {
             schema: Schema::ERC721,
             network: Network::Avalanche,
             abi,
-            auto_sell_ether: None,
             created_at: now,
-        }
-    }
-
-    pub fn setting_auto_sell(self, ether: Option<f64>) -> Self {
-        Self {
-            auto_sell_ether: ether,
-            ..self
         }
     }
 }

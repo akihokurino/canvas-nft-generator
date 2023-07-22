@@ -1,6 +1,6 @@
 pub mod canvas;
 
-use crate::domain::contract::ContractId;
+use crate::domain::contract::{ContractId, WalletAddress};
 use crate::domain::token::TokenId;
 use crate::errors::AppError;
 use crate::AppResult;
@@ -92,12 +92,27 @@ impl From<Address> for ContractId {
     }
 }
 
-impl TryInto<Address> for TokenId {
+impl TryInto<Address> for ContractId {
     type Error = AppError;
 
     fn try_into(self) -> Result<Address, Self::Error> {
         self.to_string()
             .parse::<Address>()
             .map_err(|_e| AppError::internal())
+    }
+}
+
+impl From<Address> for WalletAddress {
+    fn from(value: Address) -> Self {
+        WalletAddress::from(format!("{:?}", value))
+    }
+}
+
+impl TryInto<Address> for WalletAddress {
+    type Error = AppError;
+
+    fn try_into(self) -> Result<Address, Self::Error> {
+        let raw: String = self.into();
+        raw.parse::<Address>().map_err(|_e| AppError::internal())
     }
 }

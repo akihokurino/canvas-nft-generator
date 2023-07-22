@@ -7,6 +7,7 @@ use bytes::Bytes;
 
 #[derive(Clone, Debug)]
 pub struct NftApp {
+    pub my_wallet: ethereum::MyWallet,
     pub internal_api_client: internal_api::Client,
     pub ipfs_client: ipfs::Client,
     pub canvas: ethereum::canvas::Canvas,
@@ -16,6 +17,7 @@ pub struct NftApp {
 
 impl NftApp {
     pub fn new(
+        my_wallet: ethereum::MyWallet,
         internal_api_client: internal_api::Client,
         ipfs_client: ipfs::Client,
         canvas: ethereum::canvas::Canvas,
@@ -23,6 +25,7 @@ impl NftApp {
         token_repository: ddb::token::Repository,
     ) -> Self {
         NftApp {
+            my_wallet,
             internal_api_client,
             ipfs_client,
             canvas,
@@ -37,7 +40,13 @@ impl NftApp {
         gs_path: String,
         now: LocalDateTime,
     ) -> AppResult<bool> {
-        let contract = self.contract_repository.get_latest(&Schema::ERC721).await?;
+        let contract = self
+            .contract_repository
+            .get_latest_by_wallet_address_and_schema(
+                &self.my_wallet.address.into(),
+                &Schema::ERC721,
+            )
+            .await?;
 
         let urls = self
             .internal_api_client
@@ -68,20 +77,21 @@ impl NftApp {
             "metadata url: {:?}",
             format!("ipfs://{}", content_hash.hash.clone())
         );
-        let ipfs_hash = content_hash.hash;
 
-        self.canvas.mint(&contract, ipfs_hash.clone()).await?;
+        self.canvas
+            .mint(&contract, content_hash.hash.clone())
+            .await?;
 
         let token_id = self
             .canvas
-            .token_id_of(&contract, ipfs_hash.clone())
+            .token_id_of(&contract, content_hash.hash.clone())
             .await?;
 
         let token = domain::token::Token::new(
             contract.address,
             TokenId::from(token_id),
             work_id,
-            ipfs_hash,
+            metadata.image,
             metadata.name,
             metadata.description,
             contract.wallet_address,

@@ -55,6 +55,7 @@ pub static TOKEN_REPOSITORY: LazyAsync<ddb::token::Repository> =
 
 pub static NFT_APP: LazyAsync<application::nft::NftApp> = lazy_async!(async {
     application::nft::NftApp::new(
+        MY_WALLET.get().await.clone(),
         INTERNAL_API_CLIENT.get().await.clone(),
         IPFS_CLIENT.get().await.clone(),
         CANVAS.get().await.clone(),

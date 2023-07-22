@@ -11,9 +11,9 @@ Resources:
           AttributeType: S
         - AttributeName: sk
           AttributeType: S
-        - AttributeName: schema
+        - AttributeName: walletAddress
           AttributeType: S
-        - AttributeName: glk
+        - AttributeName: walletAddress_schema
           AttributeType: S
         - AttributeName: createdAt
           AttributeType: S
@@ -26,9 +26,9 @@ Resources:
         ReadCapacityUnits: 1
         WriteCapacityUnits: 1
       GlobalSecondaryIndexes:
-        - IndexName: glk-createdAt-index
+        - IndexName: walletAddress-createdAt-index
           KeySchema:
-            - AttributeName: glk
+            - AttributeName: walletAddress
               KeyType: HASH
             - AttributeName: createdAt
               KeyType: RANGE
@@ -37,9 +37,9 @@ Resources:
           ProvisionedThroughput:
             ReadCapacityUnits: 1
             WriteCapacityUnits: 1
-        - IndexName: schema-createdAt-index
+        - IndexName: walletAddress_schema-createdAt-index
           KeySchema:
-            - AttributeName: schema
+            - AttributeName: walletAddress_schema
               KeyType: HASH
             - AttributeName: createdAt
               KeyType: RANGE

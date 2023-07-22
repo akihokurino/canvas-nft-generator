@@ -56,12 +56,6 @@ impl TryFrom<HashMap<String, AttributeValue>> for Contract {
             abi: v.get_map("abi", |v| {
                 v.must_present().and_then(String::try_from_attribute_value)
             })?,
-            auto_sell_ether: v.get_map("autoSellEther", |v| {
-                v.map_or(Ok(None), |v| {
-                    let tmp = f64::from_str(v.as_n().map_err(|_| "not a number".to_string())?);
-                    tmp.map_err(|err| err.to_string()).map(Some)
-                })
-            })?,
             created_at: v.get_map("createdAt", |v| {
                 v.must_present()
                     .and_then(LocalDateTime::try_from_attribute_value)
@@ -76,7 +70,8 @@ impl Into<HashMap<String, AttributeValue>> for Contract {
             (
                 "walletAddress".to_string(),
                 Some(
-                    <WalletAddress as Into<String>>::into(self.wallet_address).to_attribute_value(),
+                    <WalletAddress as Into<String>>::into(self.wallet_address.clone())
+                        .to_attribute_value(),
                 ),
             ),
             (
@@ -89,11 +84,6 @@ impl Into<HashMap<String, AttributeValue>> for Contract {
             ),
             ("abi".to_string(), Some(self.abi.to_attribute_value())),
             (
-                "autoSellEther".to_string(),
-                self.auto_sell_ether
-                    .map(|v| AttributeValue::N(v.to_string())),
-            ),
-            (
                 "createdAt".to_string(),
                 Some(self.created_at.to_attribute_value()),
             ),
@@ -101,12 +91,27 @@ impl Into<HashMap<String, AttributeValue>> for Contract {
                 "glk".to_string(),
                 Some(ContractId::typename().to_attribute_value()),
             ),
+            (
+                "walletAddress_schema".to_string(),
+                Some(
+                    wallet_address_with_schema(self.wallet_address.clone(), self.schema.clone())
+                        .to_attribute_value(),
+                ),
+            ),
         ]
         .into_iter()
         .flat_map(|(k, v)| v.map(|v| (k.to_string(), v)))
         .chain(self.address.key_tuples())
         .collect()
     }
+}
+
+fn wallet_address_with_schema(wallet_address: WalletAddress, schema: Schema) -> String {
+    format!(
+        "{}_{}",
+        <WalletAddress as Into<String>>::into(wallet_address),
+        schema.to_string()
+    )
 }
 
 #[derive(Clone, Debug)]
@@ -119,8 +124,9 @@ impl Repository {
         Self { cli }
     }
 
-    pub async fn get_with_pager(
+    pub async fn get_by_wallet_address_with_pager(
         &self,
+        wallet_address: &WalletAddress,
         cursor: Option<Cursor>,
         limit: i32,
         forward: bool,
@@ -128,10 +134,13 @@ impl Repository {
         let mut q = self
             .cli
             .query()
-            .index_name("glk-createdAt-index")
+            .index_name("walletAddress-createdAt-index")
             .set_key_conditions(Some(HashMap::from([(
-                "glk".to_string(),
-                condition_eq(ContractId::typename().to_attribute_value()),
+                "walletAddress".to_string(),
+                condition_eq(
+                    <WalletAddress as Into<String>>::into(wallet_address.clone())
+                        .to_attribute_value(),
+                ),
             )])))
             .limit(limit)
             .scan_index_forward(forward)
@@ -150,14 +159,21 @@ impl Repository {
             .collect::<AppResult<Vec<EntityWithCursor<Contract>>>>()
     }
 
-    pub async fn get_latest(&self, schema: &Schema) -> AppResult<Contract> {
+    pub async fn get_latest_by_wallet_address_and_schema(
+        &self,
+        wallet_address: &WalletAddress,
+        schema: &Schema,
+    ) -> AppResult<Contract> {
         let res = self
             .cli
             .query()
-            .index_name("schema-createdAt-index")
+            .index_name("walletAddress_schema-createdAt-index")
             .set_key_conditions(Some(HashMap::from([(
-                "schema".to_string(),
-                condition_eq(schema.to_string().to_attribute_value()),
+                "walletAddress_schema".to_string(),
+                condition_eq(
+                    wallet_address_with_schema(wallet_address.clone(), schema.clone())
+                        .to_attribute_value(),
+                ),
             )])))
             .limit(1)
             .scan_index_forward(false)

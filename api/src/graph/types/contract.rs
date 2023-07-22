@@ -1,7 +1,9 @@
 use crate::graph;
 use crate::graph::types::DateTime;
-use app::domain;
-use async_graphql::ID;
+use crate::graph::AppContext;
+use app::{ddb, domain};
+use async_graphql::connection::{Connection, Edge};
+use async_graphql::{Context, ID};
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug, async_graphql::Enum)]
 #[graphql(remote = "domain::contract::Schema")]
@@ -40,11 +42,43 @@ impl Contract {
         Ok(self.contract.network.clone().into())
     }
 
-    async fn auto_sell_ether(&self) -> graph::Result<Option<f64>> {
-        Ok(self.contract.auto_sell_ether.clone())
-    }
-
     async fn created_at(&self) -> graph::Result<DateTime> {
         Ok(self.contract.created_at.clone().into())
+    }
+
+    async fn tokens(
+        &self,
+        ctx: &Context<'_>,
+        after: Option<String>,
+        before: Option<String>,
+        first: Option<i32>,
+        last: Option<i32>,
+    ) -> graph::Result<Connection<String, graph::types::token::Token>> {
+        ctx.authorized()?;
+
+        let token_repository = ctx.data::<ddb::token::Repository>()?;
+
+        let paging = graph::pagination::Pagination::calc(after, before, first, last, 20)?;
+
+        let items = token_repository
+            .get_by_contract_with_pager(
+                &self.contract.address,
+                paging.cursor.clone(),
+                paging.limit,
+                paging.forward,
+            )
+            .await?;
+
+        Ok(paging.connection(
+            items
+                .into_iter()
+                .map(|v| {
+                    Edge::new(
+                        v.cursor.into(),
+                        graph::types::token::Token { token: v.entity },
+                    )
+                })
+                .collect::<Vec<_>>(),
+        ))
     }
 }
