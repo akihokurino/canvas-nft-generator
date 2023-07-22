@@ -1,5 +1,5 @@
 use crate::sync::LoadOnce;
-use crate::{ddb, ethereum};
+use crate::{ddb, ethereum, internal_api};
 use once_cell::sync::Lazy;
 
 pub type LazyAsync<T> = Lazy<LoadOnce<T>>;
@@ -33,6 +33,9 @@ pub static MY_WALLET: LazyAsync<ethereum::MyWallet> = lazy_async!(async {
         ETHEREUM_URL.clone(),
         INTERNAL_TOKEN.clone(),
     )
+});
+pub static INTERNAL_API_CLIENT: LazyAsync<internal_api::Client> = lazy_async!(async {
+    internal_api::Client::new(GRPC_SERVER_BASE_URL.clone(), INTERNAL_TOKEN.clone())
 });
 
 static AWS_CONFIG: LazyAsync<aws_config::SdkConfig> = lazy_async!(aws_config::load_from_env());
