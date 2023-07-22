@@ -49,6 +49,7 @@ impl HttpHandler {
         let my_wallet = di::MY_WALLET.get().await.clone();
         let contract_repository = di::CONTRACT_REPOSITORY.get().await.clone();
         let token_repository = di::TOKEN_REPOSITORY.get().await.clone();
+        let sns_adapter = di::SNS_ADAPTER.get().await.clone();
         let nft_app = di::NFT_APP.get().await.clone();
 
         let schema = Schema::build(
@@ -59,6 +60,7 @@ impl HttpHandler {
         .data(my_wallet.clone())
         .data(contract_repository.clone())
         .data(token_repository.clone())
+        .data(sns_adapter.clone())
         .data(nft_app.clone())
         .directive(auth)
         .finish();

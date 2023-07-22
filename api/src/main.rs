@@ -2,7 +2,7 @@ mod graph;
 
 use actix_web::web::Data;
 use actix_web::{guard, web, App, HttpRequest, HttpResponse, HttpServer};
-use app::{di, ethereum};
+use app::{aws, di, ethereum};
 use async_graphql::http::{playground_source, GraphQLPlaygroundConfig};
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
 use std::env;
@@ -10,7 +10,7 @@ use std::str::FromStr;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    app::aws::ssm::may_load_dotenv()
+    aws::ssm::may_load_dotenv()
         .await
         .expect("failed to load ssm parameter store");
 

@@ -34,7 +34,7 @@ impl Token {
         Ok(format!(
             "{}/ipfs/{}",
             di::IPFS_GATEWAY.clone(),
-            self.token.ipfs_hash.clone()
+            self.token.ipfs_image_hash.clone()
         ))
     }
 

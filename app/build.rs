@@ -6,6 +6,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("target dir = {:?}", out_dir);
     tonic_build::configure()
         .build_server(false)
+        .format(false)
         .file_descriptor_set_path(out_dir.join("proto_descriptor.bin"))
         .compile(&["proto/api.proto"], &["proto"])
         .unwrap();

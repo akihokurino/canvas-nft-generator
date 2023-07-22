@@ -48,7 +48,7 @@ impl TryFrom<HashMap<String, AttributeValue>> for Token {
                     .and_then(String::try_from_attribute_value)?;
                 Ok(WalletAddress::from(raw))
             })?,
-            ipfs_hash: v.get_map("ipfsHash", |v| {
+            ipfs_image_hash: v.get_map("ipfsImageHash", |v| {
                 v.must_present().and_then(String::try_from_attribute_value)
             })?,
             name: v.get_map("name", |v| {
@@ -82,13 +82,11 @@ impl Into<HashMap<String, AttributeValue>> for Token {
             ),
             (
                 "ownerAddress".to_string(),
-                Some(
-                    <WalletAddress as Into<String>>::into(self.owner_address).to_attribute_value(),
-                ),
+                Some(self.owner_address.to_string().to_attribute_value()),
             ),
             (
-                "ipfsHash".to_string(),
-                Some(self.ipfs_hash.to_attribute_value()),
+                "ipfsImageHash".to_string(),
+                Some(self.ipfs_image_hash.to_attribute_value()),
             ),
             ("name".to_string(), Some(self.name.to_attribute_value())),
             (
@@ -172,7 +170,7 @@ impl Repository {
             .filter_expression("ownerAddress = :ownerAddress AND attribute_not_exists(priceEth)")
             .expression_attribute_values(
                 ":ownerAddress",
-                <WalletAddress as Into<String>>::into(wallet_address.clone()).to_attribute_value(),
+                wallet_address.to_string().to_attribute_value(),
             )
             .limit(limit)
             .table_name(TABLE_NAME);
@@ -208,7 +206,7 @@ impl Repository {
             .filter_expression("ownerAddress = :ownerAddress AND attribute_exists(priceEth)")
             .expression_attribute_values(
                 ":ownerAddress",
-                <WalletAddress as Into<String>>::into(wallet_address.clone()).to_attribute_value(),
+                wallet_address.to_string().to_attribute_value(),
             )
             .limit(limit)
             .table_name(TABLE_NAME);
@@ -224,6 +222,35 @@ impl Repository {
             .into_iter()
             .map(|v| EntityWithCursor::new(v, |v| Token::try_from(v)))
             .collect::<AppResult<Vec<EntityWithCursor<Token>>>>()
+    }
+
+    pub async fn get_by_ipfs_image_hash(
+        &self,
+        address: &ContractId,
+        ipfs_image_hash: String,
+    ) -> AppResult<Token> {
+        let res = self
+            .cli
+            .query()
+            .index_name("pk-ipfsImageHash-index")
+            .set_key_conditions(Some(HashMap::from([
+                ("pk".to_string(), condition_eq(address.to_attribute_value())),
+                (
+                    "ipfsImageHash".to_string(),
+                    condition_eq(ipfs_image_hash.to_attribute_value()),
+                ),
+            ])))
+            .limit(1)
+            .table_name(TABLE_NAME)
+            .send()
+            .await?;
+
+        let items = res.items().unwrap_or_default();
+        if items.is_empty() {
+            return Err(AppError::not_found());
+        }
+
+        Ok(Token::try_from(items.first().unwrap().to_owned())?)
     }
 
     pub async fn get(&self, address: &ContractId, token_id: &TokenId) -> AppResult<Token> {

@@ -15,6 +15,8 @@ Resources:
           AttributeType: S
         - AttributeName: walletAddress_schema
           AttributeType: S
+        - AttributeName: ipfsImageHash
+          AttributeType: S
         - AttributeName: createdAt
           AttributeType: S
       KeySchema:
@@ -42,6 +44,17 @@ Resources:
             - AttributeName: walletAddress_schema
               KeyType: HASH
             - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
+        - IndexName: pk-ipfsImageHash-index
+          KeySchema:
+            - AttributeName: pk
+              KeyType: HASH
+            - AttributeName: ipfsImageHash
               KeyType: RANGE
           Projection:
             ProjectionType: ALL

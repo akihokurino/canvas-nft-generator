@@ -9,6 +9,12 @@ deploy:
 build-ApiFunction: target/x86_64-unknown-linux-musl/release/api
 	cp $< $(ARTIFACTS_DIR)/bootstrap
 
+build-SubscriberFunction: target/x86_64-unknown-linux-musl/release/subscriber
+	cp $< $(ARTIFACTS_DIR)/bootstrap
+
+build-BatchFunction: target/x86_64-unknown-linux-musl/release/batch
+	cp $< $(ARTIFACTS_DIR)/bootstrap
+
 run-local-api:
 	SSM_DOTENV_PARAMETER_NAME=/canvas-nft-generator/server/dotenv cargo run --bin api
 

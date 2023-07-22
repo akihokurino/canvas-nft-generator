@@ -5,7 +5,6 @@ use crate::AppResult;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use http::Request;
 use hyper::Body;
-use hyper_tls::HttpsConnector;
 use reqwest::Url;
 
 const GRPC_HEADER_SIZE: usize = 5;
@@ -25,7 +24,8 @@ impl Client {
     }
 
     pub async fn call(&self, req: Request<Body>) -> AppResult<Body> {
-        let client = hyper::Client::builder().build::<_, Body>(HttpsConnector::new());
+        let https = hyper_rustls::HttpsConnector::with_native_roots();
+        let client = hyper::Client::builder().build::<_, Body>(https);
         let response = client.request(req).await.unwrap();
         Ok(response.into_body())
     }

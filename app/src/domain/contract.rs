@@ -15,8 +15,14 @@ pub enum Network {
 
 pub type ContractId = domain::Id<Contract>;
 
-#[derive(From, Into, Clone, Debug)]
+#[derive(From, Into, Clone, Debug, PartialEq, Eq)]
 pub struct WalletAddress(pub String);
+
+impl WalletAddress {
+    pub fn to_string(&self) -> String {
+        <WalletAddress as Into<String>>::into(self.clone())
+    }
+}
 
 #[derive(Clone, Debug)]
 pub struct Contract {

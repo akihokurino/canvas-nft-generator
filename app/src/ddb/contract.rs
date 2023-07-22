@@ -69,10 +69,7 @@ impl Into<HashMap<String, AttributeValue>> for Contract {
         [
             (
                 "walletAddress".to_string(),
-                Some(
-                    <WalletAddress as Into<String>>::into(self.wallet_address.clone())
-                        .to_attribute_value(),
-                ),
+                Some(self.wallet_address.to_string().to_attribute_value()),
             ),
             (
                 "schema".to_string(),
@@ -107,11 +104,7 @@ impl Into<HashMap<String, AttributeValue>> for Contract {
 }
 
 fn wallet_address_with_schema(wallet_address: WalletAddress, schema: Schema) -> String {
-    format!(
-        "{}_{}",
-        <WalletAddress as Into<String>>::into(wallet_address),
-        schema.to_string()
-    )
+    format!("{}_{}", wallet_address.to_string(), schema.to_string())
 }
 
 #[derive(Clone, Debug)]
@@ -137,10 +130,7 @@ impl Repository {
             .index_name("walletAddress-createdAt-index")
             .set_key_conditions(Some(HashMap::from([(
                 "walletAddress".to_string(),
-                condition_eq(
-                    <WalletAddress as Into<String>>::into(wallet_address.clone())
-                        .to_attribute_value(),
-                ),
+                condition_eq(wallet_address.to_string().to_attribute_value()),
             )])))
             .limit(limit)
             .scan_index_forward(forward)

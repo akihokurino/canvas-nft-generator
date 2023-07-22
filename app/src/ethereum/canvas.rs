@@ -1,3 +1,4 @@
+use crate::domain::contract::WalletAddress;
 use crate::ethereum::{GAS_LIMIT, GAS_PRICE};
 use crate::{domain, AppResult};
 use ethers::abi::Abi;
@@ -71,13 +72,36 @@ impl Canvas {
         contract: &domain::contract::Contract,
         ipfs_hash: String,
     ) -> AppResult<()> {
+        let to: Address = contract.wallet_address.to_string().parse::<Address>()?;
+
         let call = self
             .transaction_contract(contract)
             .await?
-            .method::<_, H256>(
-                "mint",
-                (contract.address.to_string().parse::<Address>()?, ipfs_hash),
-            )?
+            .method::<_, H256>("mint", (to, ipfs_hash))?
+            .gas(GAS_LIMIT)
+            .gas_price(GAS_PRICE);
+        let tx = call.send().await?;
+        let receipt = tx.await?;
+
+        println!("{:?}", receipt);
+
+        Ok(())
+    }
+
+    pub async fn transfer(
+        &self,
+        contract: &domain::contract::Contract,
+        token: &domain::token::Token,
+        to: WalletAddress,
+    ) -> AppResult<()> {
+        let token_id: U256 = token.token_id.clone().try_into()?;
+        let from: Address = contract.wallet_address.to_string().parse::<Address>()?;
+        let to: Address = to.to_string().parse::<Address>()?;
+
+        let call = self
+            .transaction_contract(contract)
+            .await?
+            .method::<_, H256>("safeTransferFrom", (from, to, token_id))?
             .gas(GAS_LIMIT)
             .gas_price(GAS_PRICE);
         let tx = call.send().await?;

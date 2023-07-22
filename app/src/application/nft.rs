@@ -1,6 +1,7 @@
-use crate::domain::contract::Schema;
+use crate::domain::contract::{ContractId, Schema, WalletAddress};
 use crate::domain::time::LocalDateTime;
 use crate::domain::token::TokenId;
+use crate::errors::AppError;
 use crate::open_sea::metadata::Metadata;
 use crate::{ddb, domain, ethereum, internal_api, ipfs, AppResult};
 use bytes::Bytes;
@@ -56,11 +57,7 @@ impl NftApp {
         let bytes = reqwest::get(url).await?.bytes().await?;
 
         let content_hash = self.ipfs_client.upload(bytes, work_id.clone()).await?;
-        println!(
-            "image url: {:?}",
-            format!("ipfs://{}", content_hash.hash.clone())
-        );
-
+        let image_hash = content_hash.hash.clone();
         let metadata = Metadata::new(
             &work_id,
             "canvas nft",
@@ -73,10 +70,21 @@ impl NftApp {
                 work_id.clone(),
             )
             .await?;
-        println!(
-            "metadata url: {:?}",
-            format!("ipfs://{}", content_hash.hash.clone())
-        );
+
+        match self
+            .token_repository
+            .get_by_ipfs_image_hash(&contract.address, image_hash.clone())
+            .await
+        {
+            Ok(_data) => Err(AppError::bad_request()),
+            Err(err) => {
+                if err.kind == crate::errors::Kind::NotFound {
+                    Ok(true)
+                } else {
+                    Err(err)
+                }
+            }
+        }?;
 
         self.canvas
             .mint(&contract, content_hash.hash.clone())
@@ -91,7 +99,7 @@ impl NftApp {
             contract.address,
             TokenId::from(token_id),
             work_id,
-            metadata.image,
+            image_hash,
             metadata.name,
             metadata.description,
             contract.wallet_address,
@@ -99,6 +107,30 @@ impl NftApp {
         );
 
         self.token_repository.put(token).await?;
+
+        Ok(true)
+    }
+
+    pub async fn transfer(
+        &self,
+        address: ContractId,
+        token_id: TokenId,
+        to_address: WalletAddress,
+    ) -> AppResult<bool> {
+        let contract = self.contract_repository.get(&address).await?;
+        let token = self.token_repository.get(&address, &token_id).await?;
+
+        if contract.wallet_address != token.owner_address {
+            return Err(AppError::forbidden());
+        }
+
+        self.canvas
+            .transfer(&contract, &token, to_address.clone())
+            .await?;
+
+        self.token_repository
+            .put(token.transfer(to_address))
+            .await?;
 
         Ok(true)
     }

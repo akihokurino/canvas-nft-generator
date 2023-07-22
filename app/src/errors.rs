@@ -5,6 +5,7 @@ use aws_sdk_dynamodb::operation::put_item::PutItemError;
 use aws_sdk_dynamodb::operation::query::QueryError;
 use aws_sdk_dynamodb::operation::scan::ScanError;
 use aws_sdk_lambda::operation::invoke::InvokeError;
+use aws_sdk_sns::operation::publish::PublishError;
 use aws_sdk_ssm::error::SdkError;
 use aws_sdk_ssm::operation::get_parameter::GetParameterError;
 use derive_more::Display;
@@ -57,6 +58,13 @@ impl AppError {
     pub fn un_authorized() -> Self {
         Self {
             kind: Kind::Unauthorized,
+            msg: None,
+        }
+    }
+
+    pub fn forbidden() -> Self {
+        Self {
+            kind: Kind::Forbidden,
             msg: None,
         }
     }
@@ -266,6 +274,15 @@ impl From<ProviderError> for AppError {
         Self {
             kind: Kind::Internal,
             msg: Some(msg),
+        }
+    }
+}
+
+impl From<SdkError<PublishError>> for AppError {
+    fn from(err: SdkError<PublishError>) -> Self {
+        Self {
+            kind: Kind::Internal,
+            msg: Some(err.to_string()),
         }
     }
 }

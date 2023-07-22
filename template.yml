@@ -62,76 +62,64 @@ Resources:
     Metadata:
       BuildMethod: makefile
 
-#  SubscriberFunction:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: ./target_lambda/subscriber.zip
-#      Handler: bootstrap.is.real.handler
-#      Runtime: provided.al2
-#      MemorySize: 128
-#      Tracing: Active
-#      Timeout: 900
-#      Events:
-#        Topic:
-#          Type: SNS
-#          Properties:
-#            Topic: arn:aws:sns:ap-northeast-1:326914400610:canvas-nft-generator-topic
-#      EventInvokeConfig:
-#        MaximumRetryAttempts: 0
-#      Environment:
-#        Variables:
-#          SSM_PARAMETER: !Ref SsmParameter
-#      Policies:
-#        - AmazonDynamoDBFullAccess
-#        - AmazonCognitoPowerUser
-#        - AmazonSSMReadOnlyAccess
-#        - AmazonSNSFullAccess
-#        - AmazonSESFullAccess
-#        - AmazonS3FullAccess
-#        - AWSLambda_FullAccess
+  SubscriberFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: bootstrap.is.real.handler
+      Runtime: provided.al2
+      MemorySize: 128
+      Tracing: Active
+      Timeout: 900
+      Events:
+        Topic:
+          Type: SNS
+          Properties:
+            Topic: arn:aws:sns:ap-northeast-1:326914400610:canvas-nft-generator-topic
+      EventInvokeConfig:
+        MaximumRetryAttempts: 0
+      Environment:
+        Variables:
+          SSM_DOTENV_PARAMETER_NAME: !Ref SsmParameter
+      Policies:
+        - AmazonDynamoDBFullAccess
+        - AmazonCognitoPowerUser
+        - AmazonSSMReadOnlyAccess
+        - AmazonSNSFullAccess
+        - AmazonSESFullAccess
+        - AmazonS3FullAccess
+        - AWSLambda_FullAccess
+    Metadata:
+      BuildMethod: makefile
 
-#  BatchFunction:
-#    Type: AWS::Serverless::Function
-#    Properties:
-#      CodeUri: ./target_lambda/batch.zip
-#      Handler: bootstrap.is.real.handler
-#      Runtime: provided.al2
-#      MemorySize: 128
-#      Tracing: Active
-#      Timeout: 900
-#      Events:
-#        SyncWork:
-#          Type: Schedule
-#          Properties:
-#            Description: ''
-#            Enabled: false
-#            Input: '{"command":"sync-work"}'
-#            Schedule: 'cron(0 12 * * ? *)'
-#        SyncAllTokens:
-#          Type: Schedule
-#          Properties:
-#            Description: ''
-#            Enabled: true
-#            Input: '{"command":"sync-all-tokens"}'
-#            Schedule: 'cron(0 0 * * ? *)'
-#        AutoSelling:
-#          Type: Schedule
-#          Properties:
-#            Description: ''
-#            Enabled: true
-#            Input: '{"command":"auto-selling"}'
-#            Schedule: 'cron(0 1 * * ? *)'
-#      Environment:
-#        Variables:
-#          SSM_PARAMETER: !Ref SsmParameter
-#      Policies:
-#        - AmazonDynamoDBFullAccess
-#        - AmazonCognitoPowerUser
-#        - AmazonSSMReadOnlyAccess
-#        - AmazonSNSFullAccess
-#        - AmazonSESFullAccess
-#        - AmazonS3FullAccess
-#        - AWSLambda_FullAccess
+  BatchFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: bootstrap.is.real.handler
+      Runtime: provided.al2
+      MemorySize: 128
+      Tracing: Active
+      Timeout: 900
+      Events:
+        SyncToken:
+          Type: Schedule
+          Properties:
+            Description: ''
+            Enabled: true
+            Input: '{"command":"sync-token"}'
+            Schedule: 'cron(0 0 * * ? *)'
+      Environment:
+        Variables:
+          SSM_DOTENV_PARAMETER_NAME: !Ref SsmParameter
+      Policies:
+        - AmazonDynamoDBFullAccess
+        - AmazonCognitoPowerUser
+        - AmazonSSMReadOnlyAccess
+        - AmazonSNSFullAccess
+        - AmazonSESFullAccess
+        - AmazonS3FullAccess
+        - AWSLambda_FullAccess
 
   ApiGateway:
     Type: AWS::Serverless::Api
