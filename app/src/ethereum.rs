@@ -1,3 +1,7 @@
+pub mod canvas;
+
+use crate::domain::contract::ContractId;
+use crate::domain::token::TokenId;
 use crate::errors::AppError;
 use crate::AppResult;
 use ethers::middleware::SignerMiddleware;
@@ -5,6 +9,9 @@ use ethers::prelude::*;
 use ethers::types::Address;
 use ethers_signers::{LocalWallet, Signer};
 use std::str::FromStr;
+
+pub const GAS_LIMIT: i64 = 8000000;
+pub const GAS_PRICE: i64 = 25000000000; // 40000000000
 
 #[derive(Clone, Debug)]
 pub struct MyWallet {
@@ -63,4 +70,34 @@ pub fn wei_to_ether(wei_amount: U256) -> f64 {
 pub fn ether_to_wei(ether_amount: f64) -> U256 {
     let wei_float = ether_amount * (10.0f64).powi(18);
     U256::from(wei_float.round() as u64)
+}
+
+impl From<U256> for TokenId {
+    fn from(value: U256) -> Self {
+        Self::new(value.to_string())
+    }
+}
+
+impl TryInto<U256> for TokenId {
+    type Error = AppError;
+
+    fn try_into(self) -> Result<U256, Self::Error> {
+        U256::from_dec_str(&self.to_string()).map_err(|_e| AppError::internal())
+    }
+}
+
+impl From<Address> for ContractId {
+    fn from(value: Address) -> Self {
+        Self::new(format!("{:?}", value))
+    }
+}
+
+impl TryInto<Address> for TokenId {
+    type Error = AppError;
+
+    fn try_into(self) -> Result<Address, Self::Error> {
+        self.to_string()
+            .parse::<Address>()
+            .map_err(|_e| AppError::internal())
+    }
 }

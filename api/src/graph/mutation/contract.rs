@@ -1,6 +1,6 @@
 use crate::graph;
 use crate::graph::AppContext;
-use app::ddb;
+use app::{application, ddb};
 use app::{domain, ethereum};
 use async_graphql::Object;
 use async_graphql::{Context, InputObject};
@@ -32,10 +32,28 @@ impl ContractMutation {
 
         Ok(graph::types::contract::Contract { contract })
     }
+
+    async fn mint(&self, ctx: &Context<'_>, input: MintInput) -> graph::Result<bool> {
+        ctx.authorized()?;
+
+        let nft_app = ctx.data::<application::nft::NftApp>()?;
+        let now = domain::time::now();
+
+        nft_app.mint(input.work_id, input.gs_path, now).await?;
+
+        Ok(true)
+    }
 }
 
 #[derive(InputObject)]
 pub struct ContractCreateInput {
     pub address: String,
     pub abi: String,
+}
+
+#[derive(InputObject)]
+pub struct MintInput {
+    pub work_id: String,
+    pub gs_path: String,
+    pub is_async: bool,
 }

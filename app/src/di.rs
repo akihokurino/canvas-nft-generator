@@ -1,5 +1,5 @@
 use crate::sync::LoadOnce;
-use crate::{ddb, ethereum, internal_api};
+use crate::{application, ddb, ethereum, internal_api, ipfs};
 use once_cell::sync::Lazy;
 
 pub type LazyAsync<T> = Lazy<LoadOnce<T>>;
@@ -37,6 +37,12 @@ pub static MY_WALLET: LazyAsync<ethereum::MyWallet> = lazy_async!(async {
 pub static INTERNAL_API_CLIENT: LazyAsync<internal_api::Client> = lazy_async!(async {
     internal_api::Client::new(GRPC_SERVER_BASE_URL.clone(), INTERNAL_TOKEN.clone())
 });
+pub static IPFS_CLIENT: LazyAsync<ipfs::Client> = lazy_async!(async {
+    ipfs::Client::new(IPFS_URL.clone(), IPFS_KEY.clone(), IPFS_SECRET.clone())
+});
+pub static CANVAS: LazyAsync<ethereum::canvas::Canvas> = lazy_async!(async {
+    ethereum::canvas::Canvas::new(WALLET_SECRET.clone(), ETHEREUM_URL.clone())
+});
 
 static AWS_CONFIG: LazyAsync<aws_config::SdkConfig> = lazy_async!(aws_config::load_from_env());
 static DDB_CLIENT: LazyAsync<aws_sdk_dynamodb::Client> =
@@ -46,3 +52,13 @@ pub static CONTRACT_REPOSITORY: LazyAsync<ddb::contract::Repository> =
     lazy_async!(async { ddb::contract::Repository::new(DDB_CLIENT.get().await.clone()) });
 pub static TOKEN_REPOSITORY: LazyAsync<ddb::token::Repository> =
     lazy_async!(async { ddb::token::Repository::new(DDB_CLIENT.get().await.clone()) });
+
+pub static NFT_APP: LazyAsync<application::nft::NftApp> = lazy_async!(async {
+    application::nft::NftApp::new(
+        INTERNAL_API_CLIENT.get().await.clone(),
+        IPFS_CLIENT.get().await.clone(),
+        CANVAS.get().await.clone(),
+        CONTRACT_REPOSITORY.get().await.clone(),
+        TOKEN_REPOSITORY.get().await.clone(),
+    )
+});

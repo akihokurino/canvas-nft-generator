@@ -8,6 +8,7 @@ use aws_sdk_lambda::operation::invoke::InvokeError;
 use aws_sdk_ssm::error::SdkError;
 use aws_sdk_ssm::operation::get_parameter::GetParameterError;
 use derive_more::Display;
+use ethers::prelude::*;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Display)]
 pub enum Kind {
@@ -164,6 +165,107 @@ impl From<String> for AppError {
         Self {
             kind: Kind::Internal,
             msg: Some(err),
+        }
+    }
+}
+
+impl From<reqwest::Error> for AppError {
+    fn from(err: reqwest::Error) -> Self {
+        Self {
+            kind: Kind::Internal,
+            msg: Some(err.to_string()),
+        }
+    }
+}
+
+impl From<rustc_hex::FromHexError> for AppError {
+    fn from(err: rustc_hex::FromHexError) -> Self {
+        Self {
+            kind: Kind::Internal,
+            msg: Some(err.to_string()),
+        }
+    }
+}
+
+impl From<AbiError> for AppError {
+    fn from(err: AbiError) -> Self {
+        Self {
+            kind: Kind::Internal,
+            msg: Some(err.to_string()),
+        }
+    }
+}
+
+impl From<ContractError<SignerMiddleware<Provider<Http>, Wallet<k256::ecdsa::SigningKey>>>>
+    for AppError
+{
+    fn from(
+        e: ContractError<SignerMiddleware<Provider<Http>, Wallet<k256::ecdsa::SigningKey>>>,
+    ) -> Self {
+        match e {
+            ContractError::DecodingError(err) => {
+                let msg = format!("ethers contract sign error: {:?}", err);
+                Self {
+                    kind: Kind::Internal,
+                    msg: Some(msg),
+                }
+            }
+            ContractError::AbiError(err) => {
+                let msg = format!("ethers contract sign error: {:?}", err);
+                Self {
+                    kind: Kind::Internal,
+                    msg: Some(msg),
+                }
+            }
+            ContractError::DetokenizationError(err) => {
+                let msg = format!("ethers contract sign error: {:?}", err);
+                Self {
+                    kind: Kind::Internal,
+                    msg: Some(msg),
+                }
+            }
+            ContractError::ConstructorError => {
+                let msg =
+                    format!("ethers contract sign error: constructor is not defined in the ABI");
+                Self {
+                    kind: Kind::Internal,
+                    msg: Some(msg),
+                }
+            }
+            ContractError::ContractNotDeployed => {
+                let msg = format!("ethers contract sign error: Contract was not deployed");
+                Self {
+                    kind: Kind::Internal,
+                    msg: Some(msg),
+                }
+            }
+            _ => {
+                let msg = format!("ethers contract sign error");
+                Self {
+                    kind: Kind::Internal,
+                    msg: Some(msg),
+                }
+            }
+        }
+    }
+}
+
+impl From<ContractError<Provider<Http>>> for AppError {
+    fn from(err: ContractError<Provider<Http>>) -> Self {
+        let msg = format!("ethers contract call error: {:?}", err);
+        Self {
+            kind: Kind::Internal,
+            msg: Some(msg),
+        }
+    }
+}
+
+impl From<ProviderError> for AppError {
+    fn from(err: ProviderError) -> Self {
+        let msg = format!("ethers transaction error: {:?}", err);
+        Self {
+            kind: Kind::Internal,
+            msg: Some(msg),
         }
     }
 }
