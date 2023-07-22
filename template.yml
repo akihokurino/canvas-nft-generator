@@ -120,6 +120,8 @@ Resources:
         - AmazonSESFullAccess
         - AmazonS3FullAccess
         - AWSLambda_FullAccess
+    Metadata:
+      BuildMethod: makefile
 
   ApiGateway:
     Type: AWS::Serverless::Api
