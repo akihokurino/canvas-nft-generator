@@ -156,8 +156,8 @@ impl Repository {
 
     pub async fn get_stock_by_contract_with_pager(
         &self,
-        wallet_address: WalletAddress,
         address: &ContractId,
+        wallet_address: &WalletAddress,
         cursor: Option<Cursor>,
         limit: i32,
         forward: bool,
@@ -169,11 +169,10 @@ impl Repository {
                 ("pk".to_string(), condition_eq(address.to_attribute_value())),
                 ("sk".to_string(), condition_sk_type::<TokenId>()),
             ])))
-            .set_filter_expression(Some("attribute_not_exists(priceEth)".to_string()))
-            .filter_expression("ownerAddress = :ownerAddress")
+            .filter_expression("ownerAddress = :ownerAddress AND attribute_not_exists(priceEth)")
             .expression_attribute_values(
                 ":ownerAddress",
-                <WalletAddress as Into<String>>::into(wallet_address).to_attribute_value(),
+                <WalletAddress as Into<String>>::into(wallet_address.clone()).to_attribute_value(),
             )
             .limit(limit)
             .table_name(TABLE_NAME);
@@ -193,8 +192,8 @@ impl Repository {
 
     pub async fn get_sell_order_by_contract_with_pager(
         &self,
-        wallet_address: WalletAddress,
         address: &ContractId,
+        wallet_address: &WalletAddress,
         cursor: Option<Cursor>,
         limit: i32,
         forward: bool,
@@ -206,11 +205,10 @@ impl Repository {
                 ("pk".to_string(), condition_eq(address.to_attribute_value())),
                 ("sk".to_string(), condition_sk_type::<TokenId>()),
             ])))
-            .set_filter_expression(Some("attribute_exists(priceEth)".to_string()))
-            .filter_expression("ownerAddress = :ownerAddress")
+            .filter_expression("ownerAddress = :ownerAddress AND attribute_exists(priceEth)")
             .expression_attribute_values(
                 ":ownerAddress",
-                <WalletAddress as Into<String>>::into(wallet_address).to_attribute_value(),
+                <WalletAddress as Into<String>>::into(wallet_address.clone()).to_attribute_value(),
             )
             .limit(limit)
             .table_name(TABLE_NAME);

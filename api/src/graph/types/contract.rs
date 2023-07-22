@@ -81,4 +81,78 @@ impl Contract {
                 .collect::<Vec<_>>(),
         ))
     }
+
+    async fn stock_tokens(
+        &self,
+        ctx: &Context<'_>,
+        after: Option<String>,
+        before: Option<String>,
+        first: Option<i32>,
+        last: Option<i32>,
+    ) -> graph::Result<Connection<String, graph::types::token::Token>> {
+        ctx.authorized()?;
+
+        let token_repository = ctx.data::<ddb::token::Repository>()?;
+
+        let paging = graph::pagination::Pagination::calc(after, before, first, last, 20)?;
+
+        let items = token_repository
+            .get_stock_by_contract_with_pager(
+                &self.contract.address,
+                &self.contract.wallet_address,
+                paging.cursor.clone(),
+                paging.limit,
+                paging.forward,
+            )
+            .await?;
+
+        Ok(paging.connection(
+            items
+                .into_iter()
+                .map(|v| {
+                    Edge::new(
+                        v.cursor.into(),
+                        graph::types::token::Token { token: v.entity },
+                    )
+                })
+                .collect::<Vec<_>>(),
+        ))
+    }
+
+    async fn sell_order_tokens(
+        &self,
+        ctx: &Context<'_>,
+        after: Option<String>,
+        before: Option<String>,
+        first: Option<i32>,
+        last: Option<i32>,
+    ) -> graph::Result<Connection<String, graph::types::token::Token>> {
+        ctx.authorized()?;
+
+        let token_repository = ctx.data::<ddb::token::Repository>()?;
+
+        let paging = graph::pagination::Pagination::calc(after, before, first, last, 20)?;
+
+        let items = token_repository
+            .get_sell_order_by_contract_with_pager(
+                &self.contract.address,
+                &self.contract.wallet_address,
+                paging.cursor.clone(),
+                paging.limit,
+                paging.forward,
+            )
+            .await?;
+
+        Ok(paging.connection(
+            items
+                .into_iter()
+                .map(|v| {
+                    Edge::new(
+                        v.cursor.into(),
+                        graph::types::token::Token { token: v.entity },
+                    )
+                })
+                .collect::<Vec<_>>(),
+        ))
+    }
 }
