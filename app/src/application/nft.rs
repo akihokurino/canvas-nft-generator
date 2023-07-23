@@ -3,7 +3,7 @@ use crate::domain::time::LocalDateTime;
 use crate::domain::token::TokenId;
 use crate::errors::AppError;
 use crate::open_sea::metadata::Metadata;
-use crate::{ddb, domain, ethereum, internal_api, ipfs, AppResult};
+use crate::{aws, ddb, domain, ethereum, internal_api, ipfs, AppResult};
 use bytes::Bytes;
 
 #[derive(Clone, Debug)]
@@ -12,6 +12,7 @@ pub struct NftApp {
     pub internal_api_client: internal_api::Client,
     pub ipfs_client: ipfs::Client,
     pub canvas: ethereum::canvas::Canvas,
+    pub lambda_adapter: aws::lambda::Adapter,
     pub contract_repository: ddb::contract::Repository,
     pub token_repository: ddb::token::Repository,
 }
@@ -22,6 +23,7 @@ impl NftApp {
         internal_api_client: internal_api::Client,
         ipfs_client: ipfs::Client,
         canvas: ethereum::canvas::Canvas,
+        lambda_adapter: aws::lambda::Adapter,
         contract_repository: ddb::contract::Repository,
         token_repository: ddb::token::Repository,
     ) -> Self {
@@ -30,6 +32,7 @@ impl NftApp {
             internal_api_client,
             ipfs_client,
             canvas,
+            lambda_adapter,
             contract_repository,
             token_repository,
         }
@@ -111,6 +114,51 @@ impl NftApp {
         Ok(true)
     }
 
+    pub async fn sell(
+        &self,
+        address: ContractId,
+        token_id: TokenId,
+        ether: f64,
+    ) -> AppResult<bool> {
+        let contract = self.contract_repository.get(&address).await?;
+        let token = self.token_repository.get(&address, &token_id).await?;
+        let my_wallet_address = WalletAddress::from(self.my_wallet.address);
+
+        if contract.wallet_address != my_wallet_address
+            || contract.wallet_address != token.owner_address
+        {
+            return Err(AppError::forbidden());
+        }
+
+        if ether <= 0.0 {
+            return Err(AppError::bad_request());
+        }
+
+        let open_sea_info_resp = self
+            .lambda_adapter
+            .invoke_lambda_open_sea(aws::lambda::invoke_open_sea_sdk::Request::sell(
+                &contract.address,
+                &token.token_id,
+                ether,
+            ))
+            .await?;
+        if open_sea_info_resp.result != 0 || open_sea_info_resp.sell_response.is_none() {
+            return Err(AppError::internal());
+        }
+        let price_eth = open_sea_info_resp
+            .sell_response
+            .unwrap()
+            .sell_price
+            .parse::<f64>()?;
+        let owner_address = token.owner_address.clone();
+
+        self.token_repository
+            .put(token.update(Some(price_eth), owner_address))
+            .await?;
+
+        Ok(true)
+    }
+
     pub async fn transfer(
         &self,
         address: ContractId,
@@ -119,8 +167,11 @@ impl NftApp {
     ) -> AppResult<bool> {
         let contract = self.contract_repository.get(&address).await?;
         let token = self.token_repository.get(&address, &token_id).await?;
+        let my_wallet_address = WalletAddress::from(self.my_wallet.address);
 
-        if contract.wallet_address != token.owner_address {
+        if contract.wallet_address != my_wallet_address
+            || contract.wallet_address != token.owner_address
+        {
             return Err(AppError::forbidden());
         }
 
@@ -131,6 +182,52 @@ impl NftApp {
         self.token_repository
             .put(token.transfer(to_address))
             .await?;
+
+        Ok(true)
+    }
+
+    pub async fn sync(&self) -> AppResult<bool> {
+        let contracts = self.contract_repository.get_all().await?;
+
+        for contract in contracts {
+            let tokens = self
+                .token_repository
+                .get_all_by_contract(&contract.address)
+                .await?;
+
+            for token in tokens {
+                let owner_address = self
+                    .canvas
+                    .owner_of(&contract, token.token_id.clone().try_into()?)
+                    .await?;
+                let open_sea_info_resp = self
+                    .lambda_adapter
+                    .invoke_lambda_open_sea(aws::lambda::invoke_open_sea_sdk::Request::info(
+                        &contract.address,
+                        &token.token_id,
+                    ))
+                    .await?;
+                if open_sea_info_resp.result != 0 || open_sea_info_resp.info_response.is_none() {
+                    return Err(AppError::internal());
+                }
+                let price_eth = open_sea_info_resp
+                    .info_response
+                    .unwrap()
+                    .sell_price
+                    .parse::<f64>()?;
+
+                self.token_repository
+                    .put(token.update(
+                        if price_eth > 0.0 {
+                            Some(price_eth)
+                        } else {
+                            None
+                        },
+                        WalletAddress::from(owner_address),
+                    ))
+                    .await?;
+            }
+        }
 
         Ok(true)
     }

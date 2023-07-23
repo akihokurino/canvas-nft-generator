@@ -117,6 +117,26 @@ impl Repository {
         Self { cli }
     }
 
+    pub async fn get_all(&self) -> AppResult<Vec<Contract>> {
+        let res = self
+            .cli
+            .query()
+            .index_name("glk-createdAt-index")
+            .set_key_conditions(Some(HashMap::from([(
+                "glk".to_string(),
+                condition_eq(ContractId::typename().to_attribute_value()),
+            )])))
+            .table_name(TABLE_NAME)
+            .send()
+            .await?;
+
+        res.items
+            .unwrap_or_default()
+            .into_iter()
+            .map(|v| Contract::try_from(v))
+            .collect::<AppResult<Vec<_>>>()
+    }
+
     pub async fn get_by_wallet_address_with_pager(
         &self,
         wallet_address: &WalletAddress,

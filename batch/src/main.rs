@@ -1,5 +1,5 @@
 use app::errors::AppError;
-use app::{aws, AppResult};
+use app::{aws, di, AppResult};
 use lambda_runtime::{service_fn, Error, LambdaEvent};
 use serde_json::Value;
 use std::env;
@@ -16,10 +16,10 @@ async fn main() -> Result<(), Error> {
         .unwrap_or(false);
 
     if with_lambda {
-        lambda_runtime::run(service_fn(in_lambda)).await?;
+        lambda_runtime::run(service_fn(bridge)).await?;
     } else {
         let command = env::var("COMMAND").unwrap_or_default();
-        if let Err(err) = handle(&command).await {
+        if let Err(err) = handle(serde_json::from_str(&command).unwrap()).await {
             println!("batch error: {:?}", err);
         }
     }
@@ -27,25 +27,21 @@ async fn main() -> Result<(), Error> {
     Ok(())
 }
 
-async fn in_lambda(event: LambdaEvent<Value>) -> Result<(), Error> {
-    let command = match get_command_from_batch_event(event.payload) {
-        Ok(v) => v,
-        Err(err) => {
-            println!("batch error: {:?}", err);
-            return Ok(());
-        }
-    };
-
-    println!("exec command: {}", command.clone());
-    if let Err(err) = handle(&command).await {
+async fn bridge(event: LambdaEvent<Value>) -> Result<(), Error> {
+    if let Err(err) = handle(event.payload).await {
         println!("batch error: {:?}", err);
     }
-
     Ok(())
 }
 
-async fn handle(command: &str) -> AppResult<()> {
-    if command == "sync-token" {}
+async fn handle(payload: Value) -> AppResult<()> {
+    let command = get_command_from_batch_event(payload)?;
+    let nft_app = di::NFT_APP.get().await.clone();
+
+    println!("exec command: {}", command);
+    if command == "sync-token" {
+        nft_app.sync().await?;
+    }
 
     Ok(())
 }

@@ -122,6 +122,25 @@ impl Repository {
         Self { cli }
     }
 
+    pub async fn get_all_by_contract(&self, address: &ContractId) -> AppResult<Vec<Token>> {
+        let res = self
+            .cli
+            .query()
+            .set_key_conditions(Some(HashMap::from([
+                ("pk".to_string(), condition_eq(address.to_attribute_value())),
+                ("sk".to_string(), condition_sk_type::<TokenId>()),
+            ])))
+            .table_name(TABLE_NAME)
+            .send()
+            .await?;
+
+        res.items
+            .unwrap_or_default()
+            .into_iter()
+            .map(|v| Token::try_from(v))
+            .collect::<AppResult<Vec<_>>>()
+    }
+
     pub async fn get_by_contract_with_pager(
         &self,
         address: &ContractId,

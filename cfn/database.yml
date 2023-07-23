@@ -17,6 +17,8 @@ Resources:
           AttributeType: S
         - AttributeName: ipfsImageHash
           AttributeType: S
+        - AttributeName: glk
+          AttributeType: S
         - AttributeName: createdAt
           AttributeType: S
       KeySchema:
@@ -55,6 +57,17 @@ Resources:
             - AttributeName: pk
               KeyType: HASH
             - AttributeName: ipfsImageHash
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 1
+            WriteCapacityUnits: 1
+        - IndexName: glk-createdAt-index
+          KeySchema:
+            - AttributeName: glk
+              KeyType: HASH
+            - AttributeName: createdAt
               KeyType: RANGE
           Projection:
             ProjectionType: ALL

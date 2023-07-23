@@ -41,16 +41,17 @@ impl Token {
         }
     }
 
-    pub fn update_price(self, price: f64) -> Self {
+    pub fn update(self, price: Option<f64>, owner: WalletAddress) -> Self {
         Self {
-            price_eth: Some(price),
+            owner_address: owner,
+            price_eth: price,
             ..self
         }
     }
 
-    pub fn transfer(self, address: WalletAddress) -> Self {
+    pub fn transfer(self, to: WalletAddress) -> Self {
         Self {
-            owner_address: address,
+            owner_address: to,
             ..self
         }
     }

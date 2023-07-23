@@ -111,6 +111,7 @@ Resources:
             Schedule: 'cron(0 0 * * ? *)'
       Environment:
         Variables:
+          WITH_LAMBDA: true
           SSM_DOTENV_PARAMETER_NAME: !Ref SsmParameter
       Policies:
         - AmazonDynamoDBFullAccess

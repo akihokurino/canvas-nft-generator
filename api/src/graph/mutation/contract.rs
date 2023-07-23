@@ -54,6 +54,33 @@ impl ContractMutation {
         Ok(true)
     }
 
+    async fn sell(&self, ctx: &Context<'_>, input: SellInput) -> graph::Result<bool> {
+        ctx.authorized()?;
+
+        let sns_adapter = ctx.data::<aws::sns::Adapter>()?;
+        let nft_app = ctx.data::<application::nft::NftApp>()?;
+
+        if input.is_async {
+            sns_adapter
+                .publish(aws::sns::Task::Sell(aws::sns::SellPayload {
+                    address: input.address,
+                    token_id: input.token_id,
+                    ether: input.ether,
+                }))
+                .await?;
+        } else {
+            nft_app
+                .sell(
+                    domain::contract::ContractId::from(input.address),
+                    domain::token::TokenId::from(input.token_id),
+                    input.ether,
+                )
+                .await?;
+        }
+
+        Ok(true)
+    }
+
     async fn transfer(&self, ctx: &Context<'_>, input: TransferInput) -> graph::Result<bool> {
         ctx.authorized()?;
 
@@ -92,6 +119,14 @@ pub struct ContractCreateInput {
 pub struct MintInput {
     pub work_id: String,
     pub gs_path: String,
+    pub is_async: bool,
+}
+
+#[derive(InputObject)]
+pub struct SellInput {
+    pub address: String,
+    pub token_id: String,
+    pub ether: f64,
     pub is_async: bool,
 }
 

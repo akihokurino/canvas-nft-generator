@@ -39,6 +39,7 @@ impl Task {
 #[derive(Serialize, Deserialize)]
 pub enum Task {
     Mint(MintPayload),
+    Sell(SellPayload),
     Transfer(TransferPayload),
 }
 
@@ -46,6 +47,13 @@ pub enum Task {
 pub struct MintPayload {
     pub work_id: String,
     pub gs_path: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SellPayload {
+    pub address: String,
+    pub token_id: String,
+    pub ether: f64,
 }
 
 #[derive(Serialize, Deserialize)]

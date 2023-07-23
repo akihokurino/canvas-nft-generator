@@ -5,11 +5,13 @@ use aws_sdk_dynamodb::operation::put_item::PutItemError;
 use aws_sdk_dynamodb::operation::query::QueryError;
 use aws_sdk_dynamodb::operation::scan::ScanError;
 use aws_sdk_lambda::operation::invoke::InvokeError;
+use aws_sdk_sesv2::operation::send_email::SendEmailError;
 use aws_sdk_sns::operation::publish::PublishError;
 use aws_sdk_ssm::error::SdkError;
 use aws_sdk_ssm::operation::get_parameter::GetParameterError;
 use derive_more::Display;
 use ethers::prelude::*;
+use std::num::ParseFloatError;
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Display)]
 pub enum Kind {
@@ -280,6 +282,24 @@ impl From<ProviderError> for AppError {
 
 impl From<SdkError<PublishError>> for AppError {
     fn from(err: SdkError<PublishError>) -> Self {
+        Self {
+            kind: Kind::Internal,
+            msg: Some(err.to_string()),
+        }
+    }
+}
+
+impl From<ParseFloatError> for AppError {
+    fn from(err: ParseFloatError) -> Self {
+        Self {
+            kind: Kind::Internal,
+            msg: Some(err.to_string()),
+        }
+    }
+}
+
+impl From<SdkError<SendEmailError>> for AppError {
+    fn from(err: SdkError<SendEmailError>) -> Self {
         Self {
             kind: Kind::Internal,
             msg: Some(err.to_string()),

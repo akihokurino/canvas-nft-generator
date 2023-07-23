@@ -364,6 +364,7 @@ dependencies = [
  "aws-config",
  "aws-sdk-dynamodb",
  "aws-sdk-lambda",
+ "aws-sdk-sesv2",
  "aws-sdk-sns",
  "aws-sdk-ssm",
  "base64 0.21.2",
@@ -686,6 +687,31 @@ name = "aws-sdk-lambda"
 version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b3ad176ffaa3aafa532246eb6a9f18a7d68da19950704ecc95d33d9dc3c62a9b"
+dependencies = [
+ "aws-credential-types",
+ "aws-endpoint",
+ "aws-http",
+ "aws-sig-auth",
+ "aws-smithy-async",
+ "aws-smithy-client",
+ "aws-smithy-http",
+ "aws-smithy-http-tower",
+ "aws-smithy-json",
+ "aws-smithy-types",
+ "aws-types",
+ "bytes",
+ "http",
+ "regex",
+ "tokio-stream",
+ "tower",
+ "tracing",
+]
+
+[[package]]
+name = "aws-sdk-sesv2"
+version = "0.28.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4891169a246b580136f4d3682c11a68b710bdc1027dd7774023fa651a87f10b6"
 dependencies = [
  "aws-credential-types",
  "aws-endpoint",

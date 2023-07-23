@@ -17,7 +17,6 @@ pub fn must_env(k: &str) -> String {
 
 pub static GRPC_SERVER_BASE_URL: Lazy<String> = Lazy::new(|| must_env("GRPC_SERVER_BASE_URL"));
 pub static INTERNAL_TOKEN: Lazy<String> = Lazy::new(|| must_env("INTERNAL_TOKEN"));
-pub static OPEN_SEA_BASE_URL: Lazy<String> = Lazy::new(|| must_env("OPEN_SEA_BASE_URL"));
 pub static ETHEREUM_URL: Lazy<String> = Lazy::new(|| must_env("ETHEREUM_URL"));
 pub static LAMBDA_OPEN_SEA_ARN: Lazy<String> = Lazy::new(|| must_env("LAMBDA_OPEN_SEA_ARN"));
 pub static IPFS_URL: Lazy<String> = Lazy::new(|| must_env("IPFS_URL"));
@@ -50,10 +49,22 @@ static DDB_CLIENT: LazyAsync<aws_sdk_dynamodb::Client> =
     lazy_async!(async { aws_sdk_dynamodb::Client::new(AWS_CONFIG.get().await) });
 static SNS_CLIENT: LazyAsync<aws_sdk_sns::Client> =
     lazy_async!(async { aws_sdk_sns::Client::new(AWS_CONFIG.get().await) });
+static LAMBDA_CLIENT: LazyAsync<aws_sdk_lambda::Client> =
+    lazy_async!(async { aws_sdk_lambda::Client::new(AWS_CONFIG.get().await) });
+static SES_CLIENT: LazyAsync<aws_sdk_sesv2::Client> =
+    lazy_async!(async { aws_sdk_sesv2::Client::new(AWS_CONFIG.get().await) });
 
 pub static SNS_ADAPTER: LazyAsync<aws::sns::Adapter> = lazy_async!(async {
     aws::sns::Adapter::new(SNS_CLIENT.get().await.clone(), SNS_TOPIC_ARN.clone())
 });
+pub static LAMBDA_ADAPTER: LazyAsync<aws::lambda::Adapter> = lazy_async!(async {
+    aws::lambda::Adapter::new(
+        LAMBDA_CLIENT.get().await.clone(),
+        LAMBDA_OPEN_SEA_ARN.clone(),
+    )
+});
+pub static SES_ADAPTER: LazyAsync<aws::ses::Adapter> =
+    lazy_async!(async { aws::ses::Adapter::new(SES_CLIENT.get().await.clone()) });
 
 pub static CONTRACT_REPOSITORY: LazyAsync<ddb::contract::Repository> =
     lazy_async!(async { ddb::contract::Repository::new(DDB_CLIENT.get().await.clone()) });
@@ -66,6 +77,7 @@ pub static NFT_APP: LazyAsync<application::nft::NftApp> = lazy_async!(async {
         INTERNAL_API_CLIENT.get().await.clone(),
         IPFS_CLIENT.get().await.clone(),
         CANVAS.get().await.clone(),
+        LAMBDA_ADAPTER.get().await.clone(),
         CONTRACT_REPOSITORY.get().await.clone(),
         TOKEN_REPOSITORY.get().await.clone(),
     )
