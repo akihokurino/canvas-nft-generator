@@ -186,11 +186,15 @@ impl Repository {
         let mut q = self
             .cli
             .query()
-            .set_key_conditions(Some(HashMap::from([
-                ("pk".to_string(), condition_eq(address.to_attribute_value())),
-                ("sk".to_string(), condition_sk_type::<TokenId>()),
-            ])))
-            .filter_expression("ownerAddress = :ownerAddress AND attribute_not_exists(priceEth)")
+            .index_name("pk-createdAt-index")
+            .set_key_conditions(Some(HashMap::from([(
+                "pk".to_string(),
+                condition_eq(address.to_attribute_value()),
+            )])))
+            .filter_expression(
+                "glk = :glk AND ownerAddress = :ownerAddress AND attribute_not_exists(priceEth)",
+            )
+            .expression_attribute_values(":glk", TokenId::typename().to_attribute_value())
             .expression_attribute_values(
                 ":ownerAddress",
                 wallet_address.to_string().to_attribute_value(),
@@ -200,7 +204,7 @@ impl Repository {
             .table_name(TABLE_NAME);
 
         if let Some(cursor) = cursor {
-            q = q.key_conditions("sk", condition_start_from(cursor, forward))
+            q = q.key_conditions("createdAt", condition_start_from(cursor, forward))
         }
 
         let res = q.send().await?;
@@ -223,11 +227,15 @@ impl Repository {
         let mut q = self
             .cli
             .query()
-            .set_key_conditions(Some(HashMap::from([
-                ("pk".to_string(), condition_eq(address.to_attribute_value())),
-                ("sk".to_string(), condition_sk_type::<TokenId>()),
-            ])))
-            .filter_expression("ownerAddress = :ownerAddress AND attribute_exists(priceEth)")
+            .index_name("pk-createdAt-index")
+            .set_key_conditions(Some(HashMap::from([(
+                "pk".to_string(),
+                condition_eq(address.to_attribute_value()),
+            )])))
+            .filter_expression(
+                "glk = :glk AND ownerAddress = :ownerAddress AND attribute_exists(priceEth)",
+            )
+            .expression_attribute_values(":glk", TokenId::typename().to_attribute_value())
             .expression_attribute_values(
                 ":ownerAddress",
                 wallet_address.to_string().to_attribute_value(),
@@ -237,7 +245,7 @@ impl Repository {
             .table_name(TABLE_NAME);
 
         if let Some(cursor) = cursor {
-            q = q.key_conditions("sk", condition_start_from(cursor, forward))
+            q = q.key_conditions("createdAt", condition_start_from(cursor, forward))
         }
 
         let res = q.send().await?;
