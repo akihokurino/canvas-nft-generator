@@ -151,15 +151,19 @@ impl Repository {
         let mut q = self
             .cli
             .query()
-            .set_key_conditions(Some(HashMap::from([
-                ("pk".to_string(), condition_eq(address.to_attribute_value())),
-                ("sk".to_string(), condition_sk_type::<TokenId>()),
-            ])))
+            .index_name("pk-createdAt-index")
+            .set_key_conditions(Some(HashMap::from([(
+                "pk".to_string(),
+                condition_eq(address.to_attribute_value()),
+            )])))
+            .filter_expression("glk = :glk")
+            .expression_attribute_values(":glk", TokenId::typename().to_attribute_value())
             .limit(limit)
+            .scan_index_forward(forward)
             .table_name(TABLE_NAME);
 
         if let Some(cursor) = cursor {
-            q = q.key_conditions("sk", condition_start_from(cursor, forward))
+            q = q.key_conditions("createdAt", condition_start_from(cursor, forward))
         }
 
         let res = q.send().await?;
@@ -167,7 +171,7 @@ impl Repository {
         res.items
             .unwrap_or_default()
             .into_iter()
-            .map(|v| EntityWithCursor::new(v, |v| Token::try_from(v)))
+            .map(|v| EntityWithCursor::new(v, |v| Token::try_from(v), "createdAt"))
             .collect::<AppResult<Vec<EntityWithCursor<Token>>>>()
     }
 
@@ -192,6 +196,7 @@ impl Repository {
                 wallet_address.to_string().to_attribute_value(),
             )
             .limit(limit)
+            .scan_index_forward(forward)
             .table_name(TABLE_NAME);
 
         if let Some(cursor) = cursor {
@@ -203,7 +208,7 @@ impl Repository {
         res.items
             .unwrap_or_default()
             .into_iter()
-            .map(|v| EntityWithCursor::new(v, |v| Token::try_from(v)))
+            .map(|v| EntityWithCursor::new(v, |v| Token::try_from(v), "createdAt"))
             .collect::<AppResult<Vec<EntityWithCursor<Token>>>>()
     }
 
@@ -228,6 +233,7 @@ impl Repository {
                 wallet_address.to_string().to_attribute_value(),
             )
             .limit(limit)
+            .scan_index_forward(forward)
             .table_name(TABLE_NAME);
 
         if let Some(cursor) = cursor {
@@ -239,7 +245,7 @@ impl Repository {
         res.items
             .unwrap_or_default()
             .into_iter()
-            .map(|v| EntityWithCursor::new(v, |v| Token::try_from(v)))
+            .map(|v| EntityWithCursor::new(v, |v| Token::try_from(v), "createdAt"))
             .collect::<AppResult<Vec<EntityWithCursor<Token>>>>()
     }
 

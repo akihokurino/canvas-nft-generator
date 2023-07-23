@@ -54,6 +54,15 @@ impl Canvas {
         ))
     }
 
+    pub async fn name(&self, contract: &domain::contract::Contract) -> AppResult<String> {
+        let res = self
+            .query_contract(contract)?
+            .method::<_, String>("name", ())?
+            .call()
+            .await?;
+        Ok(res)
+    }
+
     pub async fn owner_of(
         &self,
         contract: &domain::contract::Contract,

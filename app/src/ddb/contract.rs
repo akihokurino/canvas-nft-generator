@@ -165,7 +165,7 @@ impl Repository {
         res.items
             .unwrap_or_default()
             .into_iter()
-            .map(|v| EntityWithCursor::new(v, |v| Contract::try_from(v)))
+            .map(|v| EntityWithCursor::new(v, |v| Contract::try_from(v), "createdAt"))
             .collect::<AppResult<Vec<EntityWithCursor<Contract>>>>()
     }
 

@@ -51,6 +51,7 @@ impl HttpHandler {
         let token_repository = di::TOKEN_REPOSITORY.get().await.clone();
         let sns_adapter = di::SNS_ADAPTER.get().await.clone();
         let nft_app = di::NFT_APP.get().await.clone();
+        let canvas = di::CANVAS.get().await.clone();
 
         let schema = Schema::build(
             QueryRoot::default(),
@@ -62,6 +63,7 @@ impl HttpHandler {
         .data(token_repository.clone())
         .data(sns_adapter.clone())
         .data(nft_app.clone())
+        .data(canvas.clone())
         .directive(auth)
         .finish();
 

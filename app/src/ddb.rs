@@ -171,11 +171,12 @@ impl<T> EntityWithCursor<T> {
     pub fn new(
         from: HashMap<String, AttributeValue>,
         f: fn(HashMap<String, AttributeValue>) -> AppResult<T>,
+        range_key: &str,
     ) -> AppResult<EntityWithCursor<T>> {
         Ok(EntityWithCursor {
             entity: f(from.clone())?,
             cursor: from
-                .get("sk")
+                .get(range_key)
                 .ok_or_else(|| "range key field missing".to_string())
                 .and_then(|v| {
                     Ok(Cursor(

@@ -1,7 +1,8 @@
 use crate::graph;
 use crate::graph::types::DateTime;
-use app::{di, domain};
-use async_graphql::ID;
+use app::domain::contract::WalletAddress;
+use app::{di, domain, ethereum};
+use async_graphql::{Context, ID};
 
 pub struct Token {
     pub token: domain::token::Token,
@@ -48,6 +49,11 @@ impl Token {
 
     async fn price_eth(&self) -> graph::Result<Option<f64>> {
         Ok(self.token.price_eth.clone())
+    }
+
+    async fn is_owner(&self, ctx: &Context<'_>) -> graph::Result<bool> {
+        let my_wallet = ctx.data::<ethereum::MyWallet>()?;
+        Ok(WalletAddress::from(my_wallet.address.clone()) == self.token.owner_address)
     }
 
     async fn created_at(&self) -> graph::Result<DateTime> {
