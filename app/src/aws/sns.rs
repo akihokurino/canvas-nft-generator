@@ -28,11 +28,13 @@ impl Adapter {
 
 impl Task {
     pub fn message(&self) -> AppResult<String> {
-        serde_json::to_string(self).map_err(|_e| AppError::internal())
+        serde_json::to_string(self)
+            .map_err(|_e| AppError::internal("SNSペイロードの変換に失敗しました"))
     }
 
     pub fn from_sns(message: String) -> Result<Task, AppError> {
-        serde_json::from_str(&message).map_err(|_e| AppError::internal())
+        serde_json::from_str(&message)
+            .map_err(|_e| AppError::internal("SNSペイロードの変換に失敗しました"))
     }
 }
 

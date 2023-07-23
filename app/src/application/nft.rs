@@ -79,7 +79,7 @@ impl NftApp {
             .get_by_ipfs_image_hash(&contract.address, image_hash.clone())
             .await
         {
-            Ok(_data) => Err(AppError::bad_request()),
+            Ok(_data) => Err(AppError::bad_request("既にmintされています")),
             Err(err) => {
                 if err.kind == crate::errors::Kind::NotFound {
                     Ok(true)
@@ -127,11 +127,13 @@ impl NftApp {
         if contract.wallet_address != my_wallet_address
             || contract.wallet_address != token.owner_address
         {
-            return Err(AppError::forbidden());
+            return Err(AppError::forbidden("権限がありません"));
         }
 
         if ether <= 0.0 {
-            return Err(AppError::bad_request());
+            return Err(AppError::bad_request(
+                "etherは0より大きい値を指定してください",
+            ));
         }
 
         let open_sea_info_resp = self
@@ -143,7 +145,7 @@ impl NftApp {
             ))
             .await?;
         if open_sea_info_resp.result != 0 || open_sea_info_resp.sell_response.is_none() {
-            return Err(AppError::internal());
+            return Err(AppError::internal("OpenSeaのAPIがエラーを返しました"));
         }
         let price_eth = open_sea_info_resp
             .sell_response
@@ -172,7 +174,7 @@ impl NftApp {
         if contract.wallet_address != my_wallet_address
             || contract.wallet_address != token.owner_address
         {
-            return Err(AppError::forbidden());
+            return Err(AppError::forbidden("権限がありません"));
         }
 
         self.canvas
@@ -208,7 +210,7 @@ impl NftApp {
                     ))
                     .await?;
                 if open_sea_info_resp.result != 0 || open_sea_info_resp.info_response.is_none() {
-                    return Err(AppError::internal());
+                    return Err(AppError::internal("OpenSeaのAPIがエラーを返しました"));
                 }
                 let price_eth = open_sea_info_resp
                     .info_response

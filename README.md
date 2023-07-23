@@ -2,7 +2,7 @@
 
 - rust
 - actix-web4（ https://actix.rs/ ）
-- juniper（ https://github.com/graphql-rust/juniper ）
+- async-graphql（ https://github.com/async-graphql/async-graphql ）
 - lambda-web（ https://github.com/hanabu/lambda-web ）
 - aws-sdk-rust ( https://github.com/awslabs/aws-sdk-rust )
 - dynamodb
@@ -10,7 +10,6 @@
 - api gateway
 - route53
 - certificate manager
-- cognito
 - ssm
 - ses
 - sns
@@ -18,7 +17,7 @@
 - grpc-web
 - tonic（ https://github.com/hyperium/tonic )
 - opensea ( https://opensea.io/ )
-- rust-web3 ( https://github.com/tomusdrw/rust-web3 )
+- ethers-rs ( https://github.com/gakonst/ethers-rs )
 - hardhat ( https://hardhat.org/ )
 - solidity v0.8.17
 - open zeppelin ( https://openzeppelin.com/ )
@@ -26,7 +25,7 @@
 
 ## SupportNetwork
 
-- goerli
+- avalanche
 
 ## Related
 

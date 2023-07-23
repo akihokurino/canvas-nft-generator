@@ -35,7 +35,7 @@ impl Adapter {
         let output: invoke_open_sea_sdk::Response = serde_json::from_str(&payload)?;
 
         if output.result != 0 {
-            return Err(AppError::internal());
+            return Err(AppError::internal("OpenSea SDKの呼び出しに失敗しました"));
         }
 
         Ok(output)

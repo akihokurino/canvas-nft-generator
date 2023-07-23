@@ -51,13 +51,13 @@ fn get_command_from_batch_event(event: Value) -> AppResult<String> {
         Value::Object(data) => {
             let command = data.get("command");
             if command.is_none() {
-                return Err(AppError::bad_request());
+                return Err(AppError::bad_request("JSONが不正です"));
             }
             match command.unwrap() {
                 Value::String(val) => Ok(val.to_string()),
-                _ => Err(AppError::bad_request()),
+                _ => Err(AppError::bad_request("JSONが不正です")),
             }
         }
-        _ => Err(AppError::bad_request()),
+        _ => Err(AppError::bad_request("JSONが不正です")),
     }
 }

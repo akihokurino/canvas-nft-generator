@@ -20,7 +20,9 @@ pub async fn may_load_dotenv() -> AppResult<()> {
         .value
         .unwrap();
 
-    for (k, v) in dotenv_parser::parse_dotenv(&body).map_err(|_v| AppError::internal())? {
+    for (k, v) in dotenv_parser::parse_dotenv(&body)
+        .map_err(|_v| AppError::internal("SSMのロードに失敗しました"))?
+    {
         std::env::set_var(k, v);
     }
 

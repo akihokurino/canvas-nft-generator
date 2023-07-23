@@ -59,7 +59,7 @@ impl Client {
     {
         let mut body = hyper::body::to_bytes(body).await.unwrap();
         if body.is_empty() {
-            return Err(AppError::not_found());
+            return Err(AppError::not_found("レスポンスデータが存在しません"));
         }
 
         body.advance(1);

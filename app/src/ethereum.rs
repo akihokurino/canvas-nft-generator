@@ -54,10 +54,11 @@ impl MyWallet {
     }
 
     pub fn verify(&self, signature: String) -> AppResult<()> {
-        let sig = Signature::from_str(&signature).map_err(|_e| AppError::un_authorized())?;
+        let sig = Signature::from_str(&signature)
+            .map_err(|_e| AppError::un_authorized("署名が不正です"))?;
         match sig.verify(self.internal_token.clone(), self.wallet.address().clone()) {
             Ok(_) => Ok(()),
-            Err(_) => Err(AppError::un_authorized()),
+            Err(_) => Err(AppError::un_authorized("署名が不正です")),
         }
     }
 }
@@ -82,7 +83,8 @@ impl TryInto<U256> for TokenId {
     type Error = AppError;
 
     fn try_into(self) -> Result<U256, Self::Error> {
-        U256::from_dec_str(&self.to_string()).map_err(|_e| AppError::internal())
+        U256::from_dec_str(&self.to_string())
+            .map_err(|_e| AppError::internal("TokenId -> U256の変換に失敗しました"))
     }
 }
 
@@ -98,7 +100,7 @@ impl TryInto<Address> for ContractId {
     fn try_into(self) -> Result<Address, Self::Error> {
         self.to_string()
             .parse::<Address>()
-            .map_err(|_e| AppError::internal())
+            .map_err(|_e| AppError::internal("ContractId -> Addressの変換に失敗しました"))
     }
 }
 
@@ -113,6 +115,7 @@ impl TryInto<Address> for WalletAddress {
 
     fn try_into(self) -> Result<Address, Self::Error> {
         let raw: String = self.into();
-        raw.parse::<Address>().map_err(|_e| AppError::internal())
+        raw.parse::<Address>()
+            .map_err(|_e| AppError::internal("WalletAddress -> Addressの変換に失敗しました"))
     }
 }

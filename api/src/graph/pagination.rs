@@ -19,10 +19,10 @@ impl Pagination {
         default_limit: i32,
     ) -> Result<Self, AppError> {
         let (limit, forward, cursor) = match (after, before, first, last) {
-            (Some(_), Some(_), ..) => Err(AppError::bad_request())?,
-            (Some(_), _, _, Some(_)) => Err(AppError::bad_request())?,
-            (_, Some(_), Some(_), _) => Err(AppError::bad_request())?,
-            (_, _, Some(_), Some(_)) => Err(AppError::bad_request())?,
+            (Some(_), Some(_), ..) => Err(AppError::bad_request("不正なリクエストです"))?,
+            (Some(_), _, _, Some(_)) => Err(AppError::bad_request("不正なリクエストです"))?,
+            (_, Some(_), Some(_), _) => Err(AppError::bad_request("不正なリクエストです"))?,
+            (_, _, Some(_), Some(_)) => Err(AppError::bad_request("不正なリクエストです"))?,
             (Some(after), None, first, None) => (
                 first.unwrap_or(default_limit),
                 true,

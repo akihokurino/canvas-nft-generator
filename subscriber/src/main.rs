@@ -33,7 +33,7 @@ async fn handle(payload: Value) -> AppResult<()> {
     match aws::sns::Task::from_sns(
         data.records
             .first()
-            .ok_or_else(|| AppError::bad_request())?
+            .ok_or_else(|| AppError::bad_request("JSONが不正です"))?
             .sns
             .message
             .clone(),

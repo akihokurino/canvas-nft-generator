@@ -266,7 +266,7 @@ impl Repository {
 
         let items = res.items().unwrap_or_default();
         if items.is_empty() {
-            return Err(AppError::not_found());
+            return Err(AppError::not_found("データが存在しません"));
         }
 
         Ok(Token::try_from(items.first().unwrap().to_owned())?)
@@ -284,8 +284,10 @@ impl Repository {
             .send()
             .await?;
 
-        res.item
-            .map_or(Err(AppError::not_found()), |v| Ok(Token::try_from(v)?))
+        res.item.map_or(
+            Err(AppError::not_found("データが存在しません")),
+            |v| Ok(Token::try_from(v)?),
+        )
     }
 
     pub async fn put(&self, item: Token) -> AppResult<()> {

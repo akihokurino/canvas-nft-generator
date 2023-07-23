@@ -25,7 +25,7 @@ pub trait AppContext {
     fn authorized(&self) -> AppResult<&Authorized> {
         self.ctx()
             .data_opt::<AppResult<Authorized>>()
-            .ok_or_else(|| AppError::un_authorized())?
+            .ok_or_else(|| AppError::un_authorized("署名が不正です"))?
             .as_ref()
             .map_err(|err| err.clone().into())
     }
@@ -83,7 +83,7 @@ impl HttpHandler {
                     .verify(sig.to_string())
                     .and_then(|_| Ok(Authorized {}))
             } else {
-                Err(AppError::un_authorized())
+                Err(AppError::un_authorized("署名が不正です"))
             };
 
         gql_req = gql_req.data(authorized);
