@@ -30,6 +30,5 @@ run-batch:
 		--cli-binary-format raw-in-base64-out \
 		/dev/null
 
-
 extract-abi:
 	cat ethereum/artifacts/contracts/Canvas.sol/Canvas.json | jq '.abi' | jq -c | jq '@json' | cat
