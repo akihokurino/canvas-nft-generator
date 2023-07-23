@@ -27,7 +27,7 @@ impl Adapter {
 
         self.client
             .send_email()
-            .from_email_address("canvas@no-reply.com")
+            .from_email_address("aki030402@gmail.com")
             .destination(dest)
             .content(email_content)
             .send()
