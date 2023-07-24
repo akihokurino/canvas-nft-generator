@@ -30,7 +30,7 @@
 ## Related
 
 - https://github.com/akihokurino/canvas-ios
-- https://github.com/akihokurino/canvas-server
+- https://github.com/akihokurino/canvas-asset-generator
 - https://github.com/akihokurino/canvas-web
 - https://github.com/akihokurino/lambda-opensea
 
