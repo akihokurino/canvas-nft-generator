@@ -136,7 +136,7 @@ impl NftApp {
             ));
         }
 
-        let open_sea_info_resp = self
+        let open_sea_resp = self
             .lambda_adapter
             .invoke_lambda_open_sea(aws::lambda::invoke_open_sea_sdk::Request::sell(
                 &contract.address,
@@ -144,10 +144,10 @@ impl NftApp {
                 ether,
             ))
             .await?;
-        if open_sea_info_resp.result != 0 || open_sea_info_resp.sell_response.is_none() {
+        if open_sea_resp.result != 0 || open_sea_resp.sell_response.is_none() {
             return Err(AppError::internal("OpenSeaのAPIがエラーを返しました"));
         }
-        let price_eth = open_sea_info_resp
+        let price_eth = open_sea_resp
             .sell_response
             .unwrap()
             .sell_price
@@ -202,17 +202,17 @@ impl NftApp {
                     .canvas
                     .owner_of(&contract, token.token_id.clone().try_into()?)
                     .await?;
-                let open_sea_info_resp = self
+                let open_sea_resp = self
                     .lambda_adapter
                     .invoke_lambda_open_sea(aws::lambda::invoke_open_sea_sdk::Request::info(
                         &contract.address,
                         &token.token_id,
                     ))
                     .await?;
-                if open_sea_info_resp.result != 0 || open_sea_info_resp.info_response.is_none() {
+                if open_sea_resp.result != 0 || open_sea_resp.info_response.is_none() {
                     return Err(AppError::internal("OpenSeaのAPIがエラーを返しました"));
                 }
-                let price_eth = open_sea_info_resp
+                let price_eth = open_sea_resp
                     .info_response
                     .unwrap()
                     .sell_price
