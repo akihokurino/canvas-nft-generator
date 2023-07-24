@@ -1,3 +1,4 @@
+mod dataloader;
 mod directive;
 mod errors;
 mod mutation;
@@ -11,6 +12,7 @@ use crate::graph::query::QueryRoot;
 use actix_web::HttpRequest;
 use app::errors::AppError;
 use app::{di, ethereum, AppResult};
+use async_graphql::dataloader::DataLoader;
 use async_graphql::{Context, EmptySubscription};
 use async_graphql_actix_web::{GraphQLRequest, GraphQLResponse};
 use async_trait::async_trait;
@@ -52,6 +54,7 @@ impl HttpHandler {
         let sns_adapter = di::SNS_ADAPTER.get().await.clone();
         let nft_app = di::NFT_APP.get().await.clone();
         let canvas = di::CANVAS.get().await.clone();
+        let contract_loader = dataloader::contract::Loader::new(contract_repository.clone());
 
         let schema = Schema::build(
             QueryRoot::default(),
@@ -64,6 +67,7 @@ impl HttpHandler {
         .data(sns_adapter.clone())
         .data(nft_app.clone())
         .data(canvas.clone())
+        .data(DataLoader::new(contract_loader, tokio::task::spawn))
         .directive(auth)
         .finish();
 

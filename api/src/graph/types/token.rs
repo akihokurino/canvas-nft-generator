@@ -1,7 +1,9 @@
 use crate::graph;
 use crate::graph::types::DateTime;
 use app::domain::contract::WalletAddress;
+use app::errors::AppError;
 use app::{di, domain, ethereum};
+use async_graphql::dataloader::DataLoader;
 use async_graphql::{Context, ID};
 
 pub struct Token {
@@ -58,5 +60,13 @@ impl Token {
 
     async fn created_at(&self) -> graph::Result<DateTime> {
         Ok(self.token.created_at.clone().into())
+    }
+
+    async fn contract(&self, ctx: &Context<'_>) -> graph::Result<graph::types::contract::Contract> {
+        let loader = ctx.data::<DataLoader<graph::dataloader::contract::Loader>>()?;
+        match loader.load_one(self.token.address.clone()).await? {
+            Some(contract) => Ok(graph::types::contract::Contract { contract }),
+            None => Err(AppError::not_found("データが見つかりません").into()),
+        }
     }
 }
